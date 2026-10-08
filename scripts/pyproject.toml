@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Offline data pipeline: instances, issues, LAS export"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "laspy>=2.7.0",
     "numpy>=2.5.3",
     "plyfile>=1.1.5",
 ]
@@ -31,7 +32,7 @@ strict = true
 explicit_package_bases = true
 
 [[tool.mypy.overrides]]
-module = ["plyfile"]
+module = ["plyfile", "laspy"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

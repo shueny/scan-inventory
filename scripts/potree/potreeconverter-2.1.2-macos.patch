@@ -1,0 +1,120 @@
+diff --git a/Converter/modules/unsuck/unsuck.hpp b/Converter/modules/unsuck/unsuck.hpp
+index f114426..87f6ab0 100644
+--- a/Converter/modules/unsuck/unsuck.hpp
++++ b/Converter/modules/unsuck/unsuck.hpp
+@@ -43,6 +43,8 @@ static double Infinity = std::numeric_limits<double>::infinity();
+ constexpr auto fseek_64_all_platforms = fseeko64;
+ #elif defined(WIN32)
+ constexpr auto fseek_64_all_platforms = _fseeki64;
++#elif defined(__APPLE__)
++constexpr auto fseek_64_all_platforms = fseeko; // off_t is 64 bit on macOS
+ #endif
+ 
+ 
+diff --git a/Converter/modules/unsuck/unsuck_platform_specific.cpp b/Converter/modules/unsuck/unsuck_platform_specific.cpp
+index 0fc6b14..0b9012e 100644
+--- a/Converter/modules/unsuck/unsuck_platform_specific.cpp
++++ b/Converter/modules/unsuck/unsuck_platform_specific.cpp
+@@ -357,4 +357,101 @@ CpuData getCpuData() {
+ }
+ 
+ 
++#elif defined(__APPLE__)
++
++// macOS: same functions as the Linux branch, using Mach and sysctl instead of /proc.
++
++#include <mach/mach.h>
++#include <sys/sysctl.h>
++
++MemoryData getMemoryData() {
++	MemoryData data;
++
++	int64_t totalPhysMem = 0;
++	size_t len = sizeof(totalPhysMem);
++	sysctlbyname("hw.memsize", &totalPhysMem, &len, nullptr, 0);
++
++	vm_statistics64_data_t vm;
++	mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
++	int64_t physMemUsed = 0;
++	if (host_statistics64(mach_host_self(), HOST_VM_INFO64, (host_info64_t)&vm, &count) == KERN_SUCCESS) {
++		physMemUsed = int64_t(vm.active_count + vm.wire_count + vm.compressor_page_count) * int64_t(vm_page_size);
++	}
++
++	mach_task_basic_info_data_t task;
++	mach_msg_type_number_t taskCount = MACH_TASK_BASIC_INFO_COUNT;
++	int64_t virtualMemUsedByMe = 0;
++	int64_t physMemUsedByMe = 0;
++	if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&task, &taskCount) == KERN_SUCCESS) {
++		virtualMemUsedByMe = task.virtual_size;
++		physMemUsedByMe = task.resident_size;
++	}
++
++	static int64_t virtualUsedMax = 0;
++	static int64_t physicalUsedMax = 0;
++	virtualUsedMax = std::max(virtualMemUsedByMe, virtualUsedMax);
++	physicalUsedMax = std::max(physMemUsedByMe, physicalUsedMax);
++
++	data.virtual_total = totalPhysMem;
++	data.virtual_used = physMemUsed;
++	data.physical_total = totalPhysMem;
++	data.physical_used = physMemUsed;
++	data.virtual_usedByProcess = virtualMemUsedByMe;
++	data.virtual_usedByProcess_max = virtualUsedMax;
++	data.physical_usedByProcess = physMemUsedByMe;
++	data.physical_usedByProcess_max = physicalUsedMax;
++
++	return data;
++}
++
++void printMemoryReport() {
++	auto memoryData = getMemoryData();
++	double vm = double(memoryData.virtual_usedByProcess) / (1024.0 * 1024.0 * 1024.0);
++	double pm = double(memoryData.physical_usedByProcess) / (1024.0 * 1024.0 * 1024.0);
++
++	stringstream ss;
++	ss << "memory usage: "
++		<< "virtual: " << formatNumber(vm, 1) << " GB, "
++		<< "physical: " << formatNumber(pm, 1) << " GB"
++		<< endl;
++
++	cout << ss.str();
++}
++
++void launchMemoryChecker(int64_t maxMB, double checkInterval) {
++	// The Linux version only polls and never acts on the result; nothing to do here.
++	(void)maxMB;
++	(void)checkInterval;
++}
++
++static host_cpu_load_info_data_t lastLoad;
++static bool cpuInitialized = false;
++
++CpuData getCpuData() {
++	CpuData data;
++	data.numProcessors = std::thread::hardware_concurrency();
++
++	host_cpu_load_info_data_t load;
++	mach_msg_type_number_t count = HOST_CPU_LOAD_INFO_COUNT;
++	if (host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, (host_info_t)&load, &count) != KERN_SUCCESS) {
++		data.usage = -1.0;
++		return data;
++	}
++	if (!cpuInitialized) {
++		lastLoad = load;
++		cpuInitialized = true;
++	}
++
++	uint64_t busy = 0, total = 0;
++	for (int i = 0; i < CPU_STATE_MAX; i++) {
++		uint64_t delta = load.cpu_ticks[i] - lastLoad.cpu_ticks[i];
++		total += delta;
++		if (i != CPU_STATE_IDLE) busy += delta;
++	}
++	lastLoad = load;
++	data.usage = total > 0 ? 100.0 * double(busy) / double(total) : 0.0;
++
++	return data;
++}
++
+ #endif
+\ No newline at end of file

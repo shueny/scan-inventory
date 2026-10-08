@@ -65,3 +65,36 @@ See [ADR 0001](adr/0001-repo-layout-and-tooling.md). In short: each part (pipeli
 1. The PLY is 3.25 GB. Why does `build_instances.py` stay far below that in memory, and which values does it keep per instance between chunks?
 2. Pipe 169's P&ID row says "1/2" ball valve" but it is annotated as Pipe with an estimated length of 1.24 m. Which rule catches it, what does it suggest, and why that class?
 3. Why does `tag_split` exist when pumps already allow both Motor and Piping components in the class mapping?
+
+---
+
+## T2 · Spike: LAS export, PotreeConverter, loader
+
+### What was built
+
+- `scripts/export_las.py`: streams nora.ply into LAS 1.4 (point format 7) in 2M-point chunks. Class id goes into `classification`, instance id into `point_source_id`. Optional deterministic sampling: `--sample 0.13` (random, fixed seed) or `--voxel-size 0.005` (one point per cube). Writes a `.stats.json` next to the LAS with how many points each object kept.
+- `scripts/potree/build_converter.sh` + `potreeconverter-2.1.2-macos.patch`: builds PotreeConverter natively on Apple Silicon (ADR 0004).
+- `scripts/build_potree.sh`: LAS -> Potree 2.0 tiles (`metadata.json`, `hierarchy.bin`, `octree.bin`), keeping only `rgb`, `classification`, `point source id`.
+- `scripts/verify_potree.py`: decodes `octree.bin` and proves every instance kept all its points and its class.
+- Two throwaway viewer pages (outside the repo) to test the two loader candidates. Findings in `docs/spikes/T2-report.md`.
+
+### Key concepts
+
+- **LAS**: the standard file format for laser scans. Every point has fixed fields (x, y, z, colour, classification, point source id, …). Coordinates are stored as integers plus a scale and offset (`x = int * 0.0001 + offset`), which gives 0.1 mm precision in 4 bytes.
+- **Reusing a standard field**: `point_source_id` normally says which scan position a point came from. We do not need that, so we store the instance id there. Any LAS tool keeps it, and no custom "extra bytes" are needed.
+- **Octree / level of detail**: PotreeConverter sorts points into a tree of cubes. The root cube holds a thin, evenly spread sample of the whole scan; each child cube adds more detail for a smaller area. The browser first loads the root (~0.3 MB here), then only the children near the camera, until the point budget (3M points) is used.
+- **HTTP Range requests**: all nodes live in one big `octree.bin`. The browser asks for `Range: bytes=A-B` and gets just that node (`206 Partial Content`). That is why tiles can be plain static files: no tile server needed.
+- **GPU picking**: to find what is under the mouse, the loader renders the points once more into a hidden image where each pixel's colour encodes "which point is this". It reads that one pixel back and returns the point's attributes, including `point source id` = our instance id.
+- **Random vs voxel sampling**: random keeps each point with the same probability, so dense areas stay dense. Voxel keeps one point per small cube, so point density becomes even everywhere; flat, densely scanned surfaces (floor, walls) lose the most.
+
+### Why this way
+
+- Native build with our own patch instead of Docker or an unmerged fork: [ADR 0004](adr/0004-potreeconverter-native-macos-build.md).
+- Loader and picking: [ADR 0005](adr/0005-potree-loader-and-picking.md). The less obvious finding: both loaders look the same on paper, but only one colours Potree 2.0 data by classification correctly. Reading the shader source found the reason.
+- Sampling method: [ADR 0006](adr/0006-demo-sampling.md).
+
+### Quiz
+
+1. Why can the tiles be served by a plain static file server (nginx, R2) without any tile API? What must the server support, and what goes wrong if it does not?
+2. Where is the instance id stored in the LAS file, and how did we prove it survives PotreeConverter?
+3. `potree-core` and `@pnext/three-loader` share most of their code. Which differences decided the choice, and how were they found?

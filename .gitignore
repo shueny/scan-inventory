@@ -34,3 +34,6 @@ web/dist/
 .DS_Store
 .idea/
 .vscode/
+
+# --- Local tools (PotreeConverter build) ---
+.tools/
