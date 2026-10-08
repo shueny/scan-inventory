@@ -1,0 +1,5 @@
+# Runtime services (PRD section 6). Filled in during task T4:
+#   api   FastAPI
+#   db    PostgreSQL 16
+#   tiles static server for data/potree (HTTP Range support)
+services: {}

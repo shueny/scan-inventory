@@ -1,0 +1,73 @@
+# Python and web hooks run the tool versions pinned in each project's lockfile
+# (uv.lock, pnpm-lock.yaml), so pre-commit and `make check` always agree.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+
+  - repo: local
+    hooks:
+      # --- scripts/ (pipeline) ---
+      - id: ruff-scripts
+        name: ruff (scripts)
+        entry: uv run --project scripts ruff check --fix
+        language: system
+        types: [python]
+        files: ^scripts/
+      - id: ruff-format-scripts
+        name: ruff format (scripts)
+        entry: uv run --project scripts ruff format
+        language: system
+        types: [python]
+        files: ^scripts/
+      - id: mypy-scripts
+        name: mypy (scripts)
+        entry: bash -c 'cd scripts && uv run mypy .'
+        language: system
+        types: [python]
+        files: ^scripts/
+        pass_filenames: false
+
+      # --- api/ ---
+      - id: ruff-api
+        name: ruff (api)
+        entry: uv run --project api ruff check --fix
+        language: system
+        types: [python]
+        files: ^api/
+      - id: ruff-format-api
+        name: ruff format (api)
+        entry: uv run --project api ruff format
+        language: system
+        types: [python]
+        files: ^api/
+      - id: mypy-api
+        name: mypy (api)
+        entry: bash -c 'cd api && uv run mypy .'
+        language: system
+        types: [python]
+        files: ^api/
+        pass_filenames: false
+
+      # --- web/ ---
+      - id: eslint-web
+        name: eslint (web)
+        entry: pnpm --dir web lint
+        language: system
+        files: ^web/.*\.(js|ts|tsx)$
+        pass_filenames: false
+      - id: prettier-web
+        name: prettier (web)
+        entry: pnpm --dir web format:check
+        language: system
+        files: ^web/
+        pass_filenames: false

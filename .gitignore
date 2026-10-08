@@ -1,0 +1,36 @@
+# --- Data: never committed (PRD section 0, rule 6) ---
+pointcloud/
+project/
+meta/
+data/*
+!data/.gitkeep
+*.ply
+*.e57
+*.las
+*.laz
+nora_report.txt
+
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+.venv/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Node / web ---
+node_modules/
+web/dist/
+*.tsbuildinfo
+
+# --- OS / editor ---
+.DS_Store
+.idea/
+.vscode/
