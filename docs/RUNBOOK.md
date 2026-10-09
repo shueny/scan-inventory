@@ -54,7 +54,7 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 |---|---|---|---|
 | harness | CI runs the gate on PRs; smoke test runs in CI | green CI on the harness PR | done (PR #4) |
 | T6 review queue | demo steps 6 and 7 work; every issue type from PRD 5.6 can be resolved | contract tests per resolution; e2e resolves an issue; browser check on real data | done (PR #5) |
-| T7 dashboard + export | demo steps 8 and 9 work in both modes | unit tests for `domain/summary.ts`, `domain/exportCsv.ts`; e2e downloads the CSV (static); browser check in api mode | in review |
+| T7 dashboard + export | demo steps 8 and 9 work in both modes | unit tests for `domain/summary.ts`, `domain/exportCsv.ts`; e2e downloads the CSV (static); browser check in api mode | done (PR #6) |
 | T8 polish + docs | fresh clone + README reproduces the demo; one Playwright smoke of the demo path; recorded performance numbers | README steps run from a clean clone; e2e covers the demo path | not started |
 | T9 demo deployment | demo mode UI (PRD 8.7); tiles on R2 under a versioned path; Pages deploy workflow; Range request returns 206; README links the demo | code + scripts merged; owner runs the account steps in `docs/DEPLOY.md` | not started |
 
@@ -109,3 +109,6 @@ None yet.
   chart); chart rendered only when shown; per-class zones come from the function; keyboard
   reachable, labelled scroller with a sticky class column; mocks restored, revoke after 1 s
   asserted; rejected objects checked in the per-class counts.
+- 2026-10-10: T7 review round 3 (last): CI green on e45fb15, 0 high, 0 medium, 4 low (sticky
+  header layering, queue error text on the dashboard tab, a real 1.1 s wait in a test, no test
+  that chart and table zones agree). All fixed. Loop closed. Merge after CI is green.

@@ -98,7 +98,7 @@ export function App() {
               {!instances.data && !instances.isError && (
                 <p className="p-4 text-sm text-muted">Loading the inventory…</p>
               )}
-              {issues.isError && bottomTab !== "inventory" && (
+              {issues.isError && bottomTab === "queue" && (
                 <p className="p-4 text-sm text-red-700">Could not load the review queue.</p>
               )}
             </div>

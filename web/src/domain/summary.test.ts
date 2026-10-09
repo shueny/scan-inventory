@@ -147,6 +147,11 @@ describe("countsByZoneAndClass", () => {
   it("adds a column for objects without a known zone, so cells add up to the total", () => {
     const { zones, rows } = countsByZoneAndClass([inst(1, { location: null })], ["NW"]);
     expect(zones).toEqual(["NW", "—"]);
+    // The chart and the table always list the same zones.
+    const chartZones = countsByZoneAndFamily([inst(1, { location: null })], ["NW"]).map(
+      (r) => r.zone,
+    );
+    expect(zones).toEqual(chartZones);
     expect(rows[0]).toEqual({ classId: 8, perZone: [0, 1], total: 1 });
   });
 });

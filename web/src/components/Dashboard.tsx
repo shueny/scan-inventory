@@ -112,7 +112,7 @@ export function Dashboard({
           >
             <table className="w-full text-xs tabular-nums">
               <caption className="sr-only">Objects per zone and class</caption>
-              <thead className="sticky top-0 bg-panel text-muted">
+              <thead className="sticky top-0 z-10 bg-panel text-muted">
                 <tr>
                   <th scope="col" className="sticky left-0 bg-panel text-left font-medium">
                     Class

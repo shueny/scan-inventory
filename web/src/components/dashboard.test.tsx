@@ -78,7 +78,10 @@ function show() {
 }
 
 beforeEach(() => useViewStore.setState({ filters: NO_FILTERS }));
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
 
 describe("Dashboard", () => {
   it("gives the per-zone chart numbers as a table for screen readers", () => {
@@ -113,7 +116,8 @@ describe("Dashboard", () => {
   });
 
   it("downloads the filtered inventory as CSV, with review status", async () => {
-    const user = userEvent.setup();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     let blob: Blob | undefined;
     const create = vi.spyOn(URL, "createObjectURL").mockImplementation((b) => {
       blob = b as Blob;
@@ -135,7 +139,7 @@ describe("Dashboard", () => {
     expect(create).toHaveBeenCalledOnce();
     // The blob URL stays alive for a moment so the browser can start the download.
     expect(revoke).not.toHaveBeenCalled();
-    await new Promise((resolve) => setTimeout(resolve, 1100));
+    vi.advanceTimersByTime(1000);
     expect(revoke).toHaveBeenCalledWith("blob:x");
   });
 
