@@ -1,4 +1,5 @@
 import js from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
@@ -6,8 +7,13 @@ export default tseslint.config(
   { ignores: ["dist", "node_modules"] },
   js.configs.recommended,
   ...tseslint.configs.strict,
+  reactHooks.configs.flat.recommended,
   {
     files: ["**/*.{ts,tsx,js}"],
     languageOptions: { globals: globals.browser },
+    rules: {
+      // Parameters required by an interface but not used yet are prefixed with _.
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    },
   },
 );

@@ -98,3 +98,34 @@ See [ADR 0001](adr/0001-repo-layout-and-tooling.md). In short: each part (pipeli
 1. Why can the tiles be served by a plain static file server (nginx, R2) without any tile API? What must the server support, and what goes wrong if it does not?
 2. Where is the instance id stored in the LAS file, and how did we prove it survives PotreeConverter?
 3. `potree-core` and `@pnext/three-loader` share most of their code. Which differences decided the choice, and how were they found?
+
+---
+
+## T3 · Viewer
+
+### What was built
+
+- `scripts/build_scan_meta.py` + `scripts/class_palette.py`: `data/scan.json` with the class list, one colour per class and the zones. The one place colours are defined.
+- `web/`: Vite + React 18 + TypeScript (strict) + Tailwind app with a three-column layout (legend, 3D, details) and the dataset credit in the footer.
+- `web/src/data/`: the `ScanDataSource` interface from PRD 6.1 and `StaticDataSource` (reads the pipeline's JSON files, read-only for now), plus TanStack Query hooks.
+- `web/src/viewer/Viewer.ts`: plain Three.js class with the Potree loader (3M point budget), Z-up orbit camera, class/scan colour modes, background toggle, click picking, selection box and a 700 ms fly-to.
+- `web/src/domain/`: pure functions for the fallback ray/box pick, colour tables and camera framing, with unit tests.
+- `web/src/state/viewStore.ts`: one Zustand store for the selection and view options, shared by the 3D view and the panels.
+
+### Key concepts
+
+- **Imperative core, declarative shell**: Three.js and the loader work by calling methods (`select`, `setColorMode`) on long-lived objects. React works by describing UI from state. The `Viewer` class is the imperative core; `ViewerCanvas` watches the store and calls the right method when something changes. Each side does what it is good at.
+- **UI state vs server state**: "which object is selected" belongs to the browser (Zustand). "What objects exist" belongs to the data source (TanStack Query caches it and handles loading/error). Keeping them apart means the same panels work with the static demo and, in T5, with the API.
+- **Data source interface**: components ask `useInstances()`, never `fetch('/data/instances.json')`. Swapping where data comes from is then a one-line change in `createDataSource()`.
+- **Shader filtering**: the GPU decides per point whether to draw it. The loader passes a 256-entry true/false table indexed by class id; background classes set to false are skipped, in both colour modes and in picking.
+- **Fitting a box in view**: take a sphere around the box; the camera must be `radius / sin(half field of view)` away so the sphere touches the edges. A narrow panel has a smaller horizontal field of view, so the narrower one decides.
+
+### Why this way
+
+[ADR 0007](adr/0007-viewer-architecture.md): plain Three.js class instead of react-three-fiber, background shown in light grey, scan metadata from the pipeline.
+
+### Quiz
+
+1. You click a valve in 3D. Trace what happens until the right panel shows its tag: which classes, store and hooks are involved, in order?
+2. Why can the background toggle hide Structural and Floor in both colour modes, and why does hiding them not make the page download less data?
+3. The demo should later run without a server. What in T3 already prepares for that, and what is still missing?

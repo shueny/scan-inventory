@@ -15,4 +15,4 @@ check-api:
 	cd api && uv run ruff check . && uv run ruff format --check . && uv run mypy . && uv run pytest -q
 
 check-web:
-	pnpm --dir web lint && pnpm --dir web format:check
+	pnpm --dir web typecheck && pnpm --dir web lint && pnpm --dir web format:check && pnpm --dir web test

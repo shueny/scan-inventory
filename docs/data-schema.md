@@ -58,6 +58,17 @@ One record per annotated object.
 
 P&ID rows with no instance id: `tag`, `element`, `dimension`, `nominal_inch`, `spool_colour`, `location`, `system`, `instance_ids` (empty).
 
+## data/scan.json
+
+Written by `scripts/build_scan_meta.py` from `meta/classes.json`, `data/instances.json` and the palette in `scripts/class_palette.py`. The single source of class colours: the viewer, the lists and the API (T4) read them from here.
+
+| field | type | meaning |
+|---|---|---|
+| `scan_id`, `name`, `source`, `licence`, `doi` | string | scan identity and dataset credit |
+| `instance_count`, `point_count` | int | totals |
+| `classes[]` | object | classes that have at least one object, by id: `id`, `name`, `color` (`#rrggbb`), `is_background`, `instance_count` |
+| `zones` | string[] | zones present, in display order `NW, NC, NE, SW, SC, SE, SW - SE` |
+
 ## data/instances.csv
 
 Flat copy of `instances[]` for spreadsheets. `centroid` becomes `cx, cy, cz`, `bbox_size` becomes `size_x, size_y, size_z`, `all_tags` is `;`-joined.

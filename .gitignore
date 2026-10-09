@@ -30,6 +30,9 @@ node_modules/
 web/dist/
 *.tsbuildinfo
 
+# --- Local launch config for the desktop app's preview (machine-specific paths) ---
+.claude/launch.json
+
 # --- OS / editor ---
 .DS_Store
 .idea/
