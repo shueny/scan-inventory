@@ -103,3 +103,9 @@ None yet.
   layout; tests tightened. Decided (proposed in ADR 0013): rejected objects are not counted.
   Rejected: CSV box sizes differ between modes (checked: all 789 values equal). Accepted risk:
   api mode covered by contract tests, not by the smoke test.
+- 2026-10-10: T7 review round 2: CI green on 0628fd6; the rejected CSV finding re-checked by the
+  reviewer (0 differences). 1 medium (no test proved the chart draws: a 0-height chart passed),
+  5 low. Fixed: smoke counts drawn bars before and after the per-class view (fails on a 0-height
+  chart); chart rendered only when shown; per-class zones come from the function; keyboard
+  reachable, labelled scroller with a sticky class column; mocks restored, revoke after 1 s
+  asserted; rejected objects checked in the per-class counts.

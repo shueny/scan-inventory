@@ -87,7 +87,7 @@ export function countsByZoneAndFamily(
 
 export interface ZoneClassRow {
   classId: number;
-  /** Objects of this (current) class per zone, in zone order. */
+  /** Objects of this (current) class per zone, in the order of `zones`. */
   perZone: number[];
   total: number;
 }
@@ -95,11 +95,13 @@ export interface ZoneClassRow {
 /**
  * Counts per zone × class (PRD 8.5), one row per current class that occurs, most common
  * first. The chart groups classes into families; this keeps the per-class numbers.
+ * `zones` is the scan's zone order plus any zone only the objects have (e.g. "—" for no
+ * zone), so every row's cells add up to its total.
  */
 export function countsByZoneAndClass(
   list: readonly Instance[],
   zoneOrder: readonly string[],
-): ZoneClassRow[] {
+): { zones: string[]; rows: ZoneClassRow[] } {
   const zones = [...zoneOrder];
   const rows = new Map<number, ZoneClassRow>();
   for (const i of counted(list)) {
@@ -114,9 +116,12 @@ export function countsByZoneAndClass(
     r.perZone[z] = (r.perZone[z] ?? 0) + 1;
     r.total += 1;
   }
-  return [...rows.values()]
-    .map((r) => ({ ...r, perZone: zones.map((_, z) => r.perZone[z] ?? 0) }))
-    .sort((a, b) => b.total - a.total || a.classId - b.classId);
+  return {
+    zones,
+    rows: [...rows.values()]
+      .map((r) => ({ ...r, perZone: zones.map((_, z) => r.perZone[z] ?? 0) }))
+      .sort((a, b) => b.total - a.total || a.classId - b.classId),
+  };
 }
 
 export interface PipeLengthRow {

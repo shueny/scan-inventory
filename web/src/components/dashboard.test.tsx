@@ -78,6 +78,7 @@ function show() {
 }
 
 beforeEach(() => useViewStore.setState({ filters: NO_FILTERS }));
+afterEach(() => vi.restoreAllMocks());
 
 describe("Dashboard", () => {
   it("gives the per-zone chart numbers as a table for screen readers", () => {
@@ -118,7 +119,7 @@ describe("Dashboard", () => {
       blob = b as Blob;
       return "blob:x";
     });
-    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    const revoke = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     useViewStore.setState({ filters: { ...NO_FILTERS, zones: ["NW"] } });
     show();
@@ -131,7 +132,11 @@ describe("Dashboard", () => {
     expect(lines).toHaveLength(3); // header + objects 1 and 2 (zone NW only)
     expect(lines[1]).toMatch(/^1,PSV-1,.*,confirmed$/);
     expect(screen.getByText(/Only the objects that pass the current filters/)).toBeInTheDocument();
-    create.mockRestore();
+    expect(create).toHaveBeenCalledOnce();
+    // The blob URL stays alive for a moment so the browser can start the download.
+    expect(revoke).not.toHaveBeenCalled();
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    expect(revoke).toHaveBeenCalledWith("blob:x");
   });
 
   it("shows counts per zone and class as a table on request (PRD 8.5)", async () => {
@@ -151,6 +156,9 @@ describe("Dashboard", () => {
       "aria-pressed",
       "true",
     );
+    expect(screen.queryByTestId("zone-chart")).toBeNull(); // the chart is not drawn meanwhile
+    await user.click(screen.getByRole("button", { name: "Chart" }));
+    expect(screen.getByTestId("zone-chart")).toBeInTheDocument();
   });
 
   it("still shows the numbers and the export when issues are not loaded", () => {

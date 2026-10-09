@@ -104,15 +104,20 @@ export function Dashboard({
           </div>
         </div>
         {view === "table" && (
-          <div className="min-h-0 flex-1 overflow-auto">
+          <div
+            role="region"
+            aria-label="Objects per zone and class, scrollable"
+            tabIndex={0}
+            className="min-h-0 flex-1 overflow-auto"
+          >
             <table className="w-full text-xs tabular-nums">
               <caption className="sr-only">Objects per zone and class</caption>
               <thead className="sticky top-0 bg-panel text-muted">
                 <tr>
-                  <th scope="col" className="text-left font-medium">
+                  <th scope="col" className="sticky left-0 bg-panel text-left font-medium">
                     Class
                   </th>
-                  {zones.map((z) => (
+                  {perClass.zones.map((z) => (
                     <th
                       key={z}
                       scope="col"
@@ -127,12 +132,15 @@ export function Dashboard({
                 </tr>
               </thead>
               <tbody>
-                {perClass.map((r) => (
+                {perClass.rows.map((r) => (
                   <tr key={r.classId} className="border-t border-line/60">
-                    <th scope="row" className="py-0.5 text-left font-normal">
+                    <th
+                      scope="row"
+                      className="sticky left-0 bg-panel py-0.5 pr-1 text-left font-normal"
+                    >
                       {className(r.classId)}
                     </th>
-                    {zones.map((z, n) => (
+                    {perClass.zones.map((z, n) => (
                       <td key={z} className="px-1 text-right">
                         {r.perZone[n] || ""}
                       </td>
@@ -144,30 +152,32 @@ export function Dashboard({
             </table>
           </div>
         )}
-        <div className={view === "chart" ? "min-h-36 flex-1" : "hidden"} aria-hidden>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              accessibilityLayer={false}
-              data={chartData}
-              margin={{ top: 4, right: 4, bottom: 0, left: -24 }}
-            >
-              <CartesianGrid vertical={false} stroke="#e3e6ea" />
-              <XAxis dataKey="zone" tick={{ fontSize: 11 }} interval={0} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              {families.map((f) => (
-                <Bar
-                  key={f.id}
-                  dataKey={f.id}
-                  name={f.label}
-                  stackId="zone"
-                  fill={FAMILY_COLOR[f.id]}
-                />
-              ))}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {view === "chart" && (
+          <div className="min-h-36 flex-1" aria-hidden data-testid="zone-chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                accessibilityLayer={false}
+                data={chartData}
+                margin={{ top: 4, right: 4, bottom: 0, left: -24 }}
+              >
+                <CartesianGrid vertical={false} stroke="#e3e6ea" />
+                <XAxis dataKey="zone" tick={{ fontSize: 11 }} interval={0} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {families.map((f) => (
+                  <Bar
+                    key={f.id}
+                    dataKey={f.id}
+                    name={f.label}
+                    stackId="zone"
+                    fill={FAMILY_COLOR[f.id]}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
         {/* The same numbers as text, for screen readers (the chart itself is hidden). */}
         <table className="sr-only">
           <caption>Objects per zone, by class family</caption>

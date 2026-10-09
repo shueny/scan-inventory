@@ -117,6 +117,9 @@ describe("objects that the numbers do not count", () => {
     expect(countsByZoneAndFamily(list, ["NW"])[0]?.total).toBe(1);
     expect(totalPipeLength(pipeLengthByZone(list, ["NW"]))).toMatchObject({ pipes: 1, lengthM: 1 });
     expect(reviewProgress(list, [])).toMatchObject({ reviewed: 2, total: 2 });
+    expect(countsByZoneAndClass(list, ["NW"]).rows).toEqual([
+      { classId: 8, perZone: [1], total: 1 },
+    ]);
   });
 });
 
@@ -132,9 +135,18 @@ describe("countsByZoneAndClass", () => {
       ["NW", "NE", "SW"],
     );
 
-    expect(rows).toEqual([
-      { classId: 8, perZone: [1, 1, 0], total: 2 },
-      { classId: 12, perZone: [0, 1, 0], total: 1 },
-    ]);
+    expect(rows).toEqual({
+      zones: ["NW", "NE", "SW"],
+      rows: [
+        { classId: 8, perZone: [1, 1, 0], total: 2 },
+        { classId: 12, perZone: [0, 1, 0], total: 1 },
+      ],
+    });
+  });
+
+  it("adds a column for objects without a known zone, so cells add up to the total", () => {
+    const { zones, rows } = countsByZoneAndClass([inst(1, { location: null })], ["NW"]);
+    expect(zones).toEqual(["NW", "—"]);
+    expect(rows[0]).toEqual({ classId: 8, perZone: [0, 1], total: 1 });
   });
 });

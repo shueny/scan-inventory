@@ -134,7 +134,14 @@ test("demo steps 8 and 9: dashboard numbers and a CSV export with review status"
 
   const lists = page.getByRole("region", { name: "Inventory and review" });
   await lists.getByRole("tab", { name: "Dashboard" }).click();
-  await expect(lists.getByText("Objects per zone, by class family").first()).toBeVisible();
+  // The chart really draws bars, also after switching to the per-class table and back.
+  const bars = lists.locator(".recharts-bar-rectangle");
+  await expect.poll(() => bars.count()).toBeGreaterThan(0);
+  await lists.getByRole("button", { name: "Per class" }).click();
+  await expect(lists.getByRole("table", { name: "Objects per zone and class" })).toBeVisible();
+  await expect(bars).toHaveCount(0);
+  await lists.getByRole("button", { name: "Chart" }).click();
+  await expect.poll(() => bars.count()).toBeGreaterThan(0);
   await expect(lists.getByText("estimate (PCA)")).toBeVisible();
   await expect(lists.getByText(/1 of 5 objects reviewed/)).toBeVisible();
 
