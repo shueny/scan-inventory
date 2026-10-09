@@ -1,10 +1,13 @@
+import sys
+from datetime import date
 from pathlib import Path
 
 import laspy
 import numpy as np
 import pytest
+from plyfile import PlyData, PlyElement
 
-from export_las import RandomSampler, VoxelSampler, export
+from export_las import RandomSampler, VoxelSampler, export, main
 from tests.test_build_instances import CLOUD, write_ply
 
 
@@ -60,3 +63,110 @@ def test_export_reports_lost_instances(tmp_path: Path) -> None:
 
     assert stats["output_points"] == 1
     assert stats["instances_lost"] == [1, 2, 3]
+
+
+# ---------------------------------------------------------------- bad input (T2 verification D3-D9)
+
+
+def write_points(path: Path, instance: list[float], label: list[float]) -> None:
+    """A tiny PLY with one point per (instance, label) pair, all at different places."""
+    rows = [
+        (i, 0, 0, 100, 150, 200, c, iid)
+        for i, (iid, c) in enumerate(zip(instance, label, strict=True))
+    ]
+    dtype = [
+        ("x", "f4"), ("y", "f4"), ("z", "f4"),
+        ("red", "u1"), ("green", "u1"), ("blue", "u1"),
+        ("scalar_label", "f4"), ("scalar_instance", "f4"),
+    ]  # fmt: skip
+    PlyData([PlyElement.describe(np.array(rows, dtype=dtype), "vertex")]).write(str(path))
+
+
+def run_main(monkeypatch: pytest.MonkeyPatch, *args: str) -> None:
+    monkeypatch.setattr(sys, "argv", ["export_las.py", *args])
+    main()
+
+
+def test_output_bytes_do_not_depend_on_the_day(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ply = tmp_path / "cloud.ply"
+    write_ply(ply, CLOUD)
+
+    class Tomorrow(date):
+        @classmethod
+        def today(cls) -> "Tomorrow":
+            return cls(2030, 1, 2)
+
+    export(ply, tmp_path / "a.las", "all", 1.0, 0.0)
+    monkeypatch.setattr(laspy.header, "date", Tomorrow)  # laspy fills in date.today()
+    export(ply, tmp_path / "b.las", "all", 1.0, 0.0)
+
+    assert (tmp_path / "a.las").read_bytes() == (tmp_path / "b.las").read_bytes()
+
+
+@pytest.mark.parametrize("bad_id", [70_000.0, -1.0])
+def test_instance_id_outside_uint16_stops_with_a_message(tmp_path: Path, bad_id: float) -> None:
+    ply = tmp_path / "cloud.ply"
+    write_points(ply, instance=[5, bad_id], label=[1, 1])
+
+    with pytest.raises(SystemExit, match="Instance id .* does not fit point_source_id"):
+        export(ply, tmp_path / "out.las", "all", 1.0, 0.0)
+
+
+@pytest.mark.parametrize("field", ["instance", "label"])
+def test_nan_id_stops_instead_of_becoming_zero(tmp_path: Path, field: str) -> None:
+    ply = tmp_path / "cloud.ply"
+    ids = {"instance": [5.0, 5.0], "label": [1.0, 1.0]}
+    ids[field][1] = float("nan")
+    write_points(ply, **ids)
+
+    with pytest.raises(SystemExit, match="not a number"):
+        export(ply, tmp_path / "out.las", "all", 1.0, 0.0)
+
+
+def test_failed_export_keeps_the_previous_file(tmp_path: Path) -> None:
+    ply = tmp_path / "cloud.ply"
+    write_points(ply, instance=[5, 6], label=[1, 300])  # class 300 does not fit uint8
+    out = tmp_path / "out.las"
+    out.write_bytes(b"previous good file")
+
+    with pytest.raises(SystemExit, match="Class id"):
+        export(ply, out, "all", 1.0, 0.0, chunk=1)  # fails in the 2nd chunk, after a write
+
+    assert out.read_bytes() == b"previous good file"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["cloud.ply", "out.las"]  # no temp file
+
+
+@pytest.mark.parametrize("size", ["nan", "inf", "0", "-1"])
+def test_voxel_size_must_be_a_positive_finite_number(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, size: str
+) -> None:
+    ply = tmp_path / "cloud.ply"
+    write_ply(ply, CLOUD)
+
+    with pytest.raises(SystemExit, match="--voxel-size"):
+        run_main(
+            monkeypatch, "--ply", str(ply), "--out", str(tmp_path / "o.las"), "--voxel-size", size
+        )
+
+
+def test_empty_ply_stops_with_a_message(tmp_path: Path) -> None:
+    ply = tmp_path / "empty.ply"
+    write_points(ply, instance=[], label=[])
+
+    with pytest.raises(SystemExit, match="no points"):
+        export(ply, tmp_path / "out.las", "all", 1.0, 0.0)
+
+
+def test_default_output_is_data_las_nora_las(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ply = tmp_path / "cloud.ply"
+    write_ply(ply, CLOUD)
+    monkeypatch.chdir(tmp_path)
+
+    run_main(monkeypatch, "--ply", str(ply))
+
+    assert (tmp_path / "data" / "las" / "nora.las").exists()
+    assert (tmp_path / "data" / "las" / "nora.stats.json").exists()

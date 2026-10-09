@@ -129,3 +129,40 @@ See [ADR 0001](adr/0001-repo-layout-and-tooling.md). In short: each part (pipeli
 1. You click a valve in 3D. Trace what happens until the right panel shows its tag: which classes, store and hooks are involved, in order?
 2. Why can the background toggle hide Structural and Floor in both colour modes, and why does hiding them not make the page download less data?
 3. The demo should later run without a server. What in T3 already prepares for that, and what is still missing?
+
+---
+
+## T2 follow-up · export_las.py edge cases (verification D3–D6, D8, D9)
+
+### What was built
+
+Fixes for the low-severity findings in `docs/spikes/T2-verification.md`, each with a unit test on a tiny synthetic PLY that failed before the fix:
+
+- **D3** The LAS header date is a constant (`CREATION_DATE`, [ADR 0008](adr/0008-fixed-las-creation-date.md)), so the same input gives the same bytes on any day.
+- **D4, D5** A new `to_int_ids()` checks instance and class ids for every chunk *before* they are counted: NaN/inf, negative and too large ids stop the run with a clear message instead of a NumPy traceback or a silent instance 0.
+- **D6** The LAS is written to `<out>.tmp` and renamed to `<out>` only when everything succeeded. A failed run deletes the temp file and leaves the previous good LAS alone.
+- **D8** `--voxel-size nan` and `inf` are rejected.
+- **D9** The docstring and `--out` default use `data/las/nora.las`; an empty PLY stops with "has no points".
+
+Real-data check (`--sample 0.05`): old and new LAS differ in one byte (the day of year in the header), stats are identical, `verify_potree.py` passes (7,600,555 points, 263 instance/class pairs). Side finding: PotreeConverter itself is not byte-reproducible, so tiles still differ between runs (ADR 0008).
+
+Not fixed: the voxel key overflow below ~4.5 µm (D9, unreachable) and the report's unit slips (D7, documentation only).
+
+### Key concepts
+
+- **Reproducible build**: same input + same code = same output bytes. Anything taken from the environment (today's date, random seeds, file order) breaks it. Byte-identical output lets a later step use a file hash to answer "did anything change?".
+- **NaN does not compare**: `nan <= 0` and `nan > 0` are both False, so `if x <= 0: reject` lets NaN through. Check "is it a good value" (`isfinite(x) and x > 0`) instead of "is it a bad value". Casting NaN to an integer is undefined: arm64 gives 0, x86 gives the most negative int64.
+- **Validate before use**: the range check existed, but ran after `np.bincount`, which already crashed on the bad id. A guard only helps if it runs first.
+- **Atomic replace**: write to a temp file in the same folder, then `rename`. On one file system a rename is atomic: readers see either the old file or the complete new one, never a half-written one.
+
+### Why this way
+
+- Temp file + rename instead of "refuse to overwrite": reruns stay convenient, and a failure still cannot destroy the previous output.
+- Ids are now checked on every point, not only on sampled points. A bad id in the source is a data error even if sampling would have dropped it.
+- Constant date: see ADR 0008 (waiting for the owner).
+
+### Quiz
+
+1. Why did `--voxel-size nan` pass the old check `args.voxel_size <= 0`, and how does the new check catch it?
+2. The old code had a friendly "does not fit point_source_id" message. Why did nobody ever see it for an id of 70000?
+3. An export is interrupted by Ctrl+C at 80 %. What is on disk afterwards, old code vs new code?
