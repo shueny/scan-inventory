@@ -127,10 +127,39 @@ describe("Dashboard", () => {
 
     expect(click).toHaveBeenCalledOnce();
     const text = await blob?.text();
-    const lines = text?.replace("﻿", "").trimEnd().split("\r\n") ?? [];
+    const lines = text?.replace("\uFEFF", "").trimEnd().split("\r\n") ?? [];
     expect(lines).toHaveLength(3); // header + objects 1 and 2 (zone NW only)
     expect(lines[1]).toMatch(/^1,PSV-1,.*,confirmed$/);
     expect(screen.getByText(/Only the objects that pass the current filters/)).toBeInTheDocument();
     create.mockRestore();
+  });
+
+  it("shows counts per zone and class as a table on request (PRD 8.5)", async () => {
+    const user = userEvent.setup();
+    show();
+
+    await user.click(screen.getByRole("button", { name: "Per class" }));
+
+    const table = screen.getByRole("table", { name: "Objects per zone and class" });
+    const pipe = within(table).getByRole("row", { name: /^Pipe/ });
+    expect(
+      within(pipe)
+        .getAllByRole("cell")
+        .map((c) => c.textContent),
+    ).toEqual(["1", "1", "2"]);
+    expect(screen.getByRole("button", { name: "Per class" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("still shows the numbers and the export when issues are not loaded", () => {
+    render(
+      <Dashboard instances={instances} issues={undefined} classes={classes} zones={["NW", "NE"]} />,
+    );
+
+    expect(screen.getByRole("button", { name: /Export CSV/ })).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: /Pipe length per zone/ })).toBeInTheDocument();
+    expect(screen.getAllByText("…")).toHaveLength(3);
   });
 });

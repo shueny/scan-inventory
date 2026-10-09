@@ -68,6 +68,8 @@ None yet.
   tag, and drop already-used tags from other objects' candidates (ADR 0012, consequences).
 - T6: filter the queue with the inventory filters; "next open issue" after resolving; more room
   for the queue at 1280 px.
+- T7 (open questions 2 and 3, ADR 0013): confirm the families, "SW - SE" as its own zone, and
+  that rejected objects are left out of the numbers.
 
 ## Log
 
@@ -95,3 +97,9 @@ None yet.
   a stale pick one step later; no negative focus test), all fixed with tests. No finding left
   open; merge only after CI is green on the fix.
 - 2026-10-09: T6 merged (PR #5, CI green on 2526a02). T7 built on branch `t7-dashboard`; ADR 0013.
+- 2026-10-09: T7 review round 1: CI red (real-data test read the gitignored file during
+  collection, high), 9 medium, 2 low. Fixed: the skip guard; "Other" family; zone x class view;
+  chart no longer a Tab stop; download for Firefox/Safari; dashboard without issues; 1280 px
+  layout; tests tightened. Decided (proposed in ADR 0013): rejected objects are not counted.
+  Rejected: CSV box sizes differ between modes (checked: all 789 values equal). Accepted risk:
+  api mode covered by contract tests, not by the smoke test.

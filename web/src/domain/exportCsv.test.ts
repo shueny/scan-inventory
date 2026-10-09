@@ -46,9 +46,9 @@ describe("inventoryCsv", () => {
       [{ ...valve, instance_id: 7, tag: null, all_tags: [] }, valve],
       classes,
     );
-    const [header, first, second] = csv.replace("﻿", "").trimEnd().split("\r\n");
+    const [header, first, second] = csv.replace("\uFEFF", "").trimEnd().split("\r\n");
 
-    expect(csv.startsWith("﻿")).toBe(true);
+    expect(csv.startsWith("\uFEFF")).toBe(true);
     expect(header?.split(",")).toContain("review_status");
     expect(first).toBe(
       '1,PSV-103A,PSV-103A PSV-103B,Pressure safety valve,Piping components,"safety valve 2"""' +

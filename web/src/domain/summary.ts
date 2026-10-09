@@ -19,6 +19,16 @@ export const FAMILIES: { id: Family; label: string; classIds: number[] }[] = [
 
 const FAMILY_OF = new Map(FAMILIES.flatMap((f) => f.classIds.map((id) => [id, f.id] as const)));
 
+/**
+ * The families as shown on the dashboard: the four above plus "Other", for an object
+ * corrected to a class outside them (e.g. Structural). Without it such an object would be
+ * in a zone's total but in no bar (review round 1 of T7).
+ */
+export const SHOWN_FAMILIES: { id: Family; label: string }[] = [
+  ...FAMILIES,
+  { id: "other", label: "Other" },
+];
+
 export function familyOf(classId: number): Family {
   return FAMILY_OF.get(classId) ?? "other";
 }
@@ -29,6 +39,13 @@ export const PIPE_CLASS_ID = 8;
 export const UNRELIABLE_DIAMETER_M = 0.3;
 
 const NO_ZONE = "—";
+/**
+ * The objects the inventory numbers count: not background, and not rejected (a reviewer
+ * said it is not a real object; ADR 0013). Review progress still counts rejected ones as
+ * reviewed.
+ */
+const counted = (list: readonly Instance[]) =>
+  list.filter((i) => !i.is_background && i.review_status !== "rejected");
 const objects = (list: readonly Instance[]) => list.filter((i) => !i.is_background);
 
 export interface ZoneFamilyRow {
@@ -60,12 +77,46 @@ export function countsByZoneAndFamily(
     return r;
   };
   zoneOrder.forEach(row);
-  for (const i of objects(list)) {
+  for (const i of counted(list)) {
     const r = row(i.location ?? NO_ZONE);
     r.counts[familyOf(i.current_class_id)] += 1;
     r.total += 1;
   }
   return [...rows.values()];
+}
+
+export interface ZoneClassRow {
+  classId: number;
+  /** Objects of this (current) class per zone, in zone order. */
+  perZone: number[];
+  total: number;
+}
+
+/**
+ * Counts per zone × class (PRD 8.5), one row per current class that occurs, most common
+ * first. The chart groups classes into families; this keeps the per-class numbers.
+ */
+export function countsByZoneAndClass(
+  list: readonly Instance[],
+  zoneOrder: readonly string[],
+): ZoneClassRow[] {
+  const zones = [...zoneOrder];
+  const rows = new Map<number, ZoneClassRow>();
+  for (const i of counted(list)) {
+    const zone = i.location ?? NO_ZONE;
+    if (!zones.includes(zone)) zones.push(zone);
+    let r = rows.get(i.current_class_id);
+    if (!r) {
+      r = { classId: i.current_class_id, perZone: [], total: 0 };
+      rows.set(i.current_class_id, r);
+    }
+    const z = zones.indexOf(zone);
+    r.perZone[z] = (r.perZone[z] ?? 0) + 1;
+    r.total += 1;
+  }
+  return [...rows.values()]
+    .map((r) => ({ ...r, perZone: zones.map((_, z) => r.perZone[z] ?? 0) }))
+    .sort((a, b) => b.total - a.total || a.classId - b.classId);
 }
 
 export interface PipeLengthRow {
@@ -90,7 +141,7 @@ export function pipeLengthByZone(
       { zone, pipes: 0, lengthM: 0, unreliablePipes: 0, unreliableLengthM: 0 },
     ]),
   );
-  for (const i of objects(list)) {
+  for (const i of counted(list)) {
     if (i.current_class_id !== PIPE_CLASS_ID) continue;
     const zone = i.location ?? NO_ZONE;
     let r = rows.get(zone);

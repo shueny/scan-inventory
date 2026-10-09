@@ -50,7 +50,7 @@ export function inventoryCsv(
       .sort((a, b) => a.instance_id - b.instance_id)
       .map((i) => COLUMNS.map((c) => csvField(c.value(i, name))).join(",")),
   ];
-  return "﻿" + lines.join("\r\n") + "\r\n";
+  return "\uFEFF" + lines.join("\r\n") + "\r\n";
 }
 
 /** e.g. "nora-inventory-2026-10-09.csv" (local date). */

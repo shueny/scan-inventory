@@ -1,5 +1,6 @@
 import type { Instance, Issue } from "../data/types";
 import {
+  countsByZoneAndClass,
   countsByZoneAndFamily,
   familyOf,
   FAMILIES,
@@ -97,5 +98,43 @@ describe("reviewProgress", () => {
     );
 
     expect(progress).toEqual({ reviewed: 1, total: 2, openIssues: { high: 1, medium: 0, low: 0 } });
+  });
+});
+
+describe("objects that the numbers do not count", () => {
+  it("counts an object corrected to a class outside the families as Other, in its zone total", () => {
+    const [row] = countsByZoneAndFamily([inst(1, { current_class_id: 0, class_id: 12 })], ["NW"]);
+    expect(row?.counts.other).toBe(1);
+    expect(row?.total).toBe(1);
+  });
+
+  it("leaves rejected objects out of zone counts and pipe length, but counts them as reviewed", () => {
+    const list = [
+      inst(1, { review_status: "rejected", length_est_m: 5 }),
+      inst(2, { review_status: "confirmed", length_est_m: 1 }),
+    ];
+
+    expect(countsByZoneAndFamily(list, ["NW"])[0]?.total).toBe(1);
+    expect(totalPipeLength(pipeLengthByZone(list, ["NW"]))).toMatchObject({ pipes: 1, lengthM: 1 });
+    expect(reviewProgress(list, [])).toMatchObject({ reviewed: 2, total: 2 });
+  });
+});
+
+describe("countsByZoneAndClass", () => {
+  it("counts per current class and zone, most common class first", () => {
+    const rows = countsByZoneAndClass(
+      [
+        inst(1, { location: "NE", current_class_id: 12 }),
+        inst(2, { location: "NW", current_class_id: 8 }),
+        inst(3, { location: "NE", current_class_id: 8 }),
+        inst(4, { location: null, is_background: true, current_class_id: 0 }),
+      ],
+      ["NW", "NE", "SW"],
+    );
+
+    expect(rows).toEqual([
+      { classId: 8, perZone: [1, 1, 0], total: 2 },
+      { classId: 12, perZone: [0, 1, 0], total: 1 },
+    ]);
   });
 });

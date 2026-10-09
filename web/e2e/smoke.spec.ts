@@ -145,7 +145,7 @@ test("demo steps 8 and 9: dashboard numbers and a CSV export with review status"
   expect(download.suggestedFilename()).toMatch(/^nora-inventory-\d{4}-\d{2}-\d{2}\.csv$/);
   const path = await download.path();
   const { readFile } = await import("node:fs/promises");
-  const csv = (await readFile(path, "utf8")).replace("﻿", "");
+  const csv = (await readFile(path, "utf8")).replace("\uFEFF", "");
   const [header, ...rows] = csv.trimEnd().split("\r\n");
   expect(header).toContain("review_status");
   expect(rows).toHaveLength(5);

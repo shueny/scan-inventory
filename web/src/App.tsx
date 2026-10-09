@@ -87,13 +87,16 @@ export function App() {
                   classes={scan.data.classes}
                 />
               )}
-              {bottomTab === "dashboard" && scan.data && instances.data && issues.data && (
+              {bottomTab === "dashboard" && scan.data && instances.data && (
                 <Dashboard
                   instances={instances.data}
                   issues={issues.data}
                   classes={scan.data.classes}
                   zones={scan.data.zones}
                 />
+              )}
+              {!instances.data && !instances.isError && (
+                <p className="p-4 text-sm text-muted">Loading the inventory…</p>
               )}
               {issues.isError && bottomTab !== "inventory" && (
                 <p className="p-4 text-sm text-red-700">Could not load the review queue.</p>

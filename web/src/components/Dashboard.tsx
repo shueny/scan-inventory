@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -14,8 +14,9 @@ import type { ClassInfo, Instance, Issue } from "../data/types";
 import { csvFileName, inventoryCsv } from "../domain/exportCsv";
 import { filterInstances, isFiltering } from "../domain/filters";
 import {
+  countsByZoneAndClass,
   countsByZoneAndFamily,
-  FAMILIES,
+  SHOWN_FAMILIES,
   pipeLengthByZone,
   reviewProgress,
   totalPipeLength,
@@ -49,19 +50,23 @@ export function Dashboard({
   zones,
 }: {
   instances: Instance[];
-  issues: Issue[];
+  /** Undefined while loading or after a failure: only the open-issue counts need them. */
+  issues: Issue[] | undefined;
   classes: ClassInfo[];
   zones: string[];
 }) {
+  const [view, setView] = useState<"chart" | "table">("chart");
   const filters = useViewStore((s) => s.filters);
   const perZone = useMemo(() => countsByZoneAndFamily(instances, zones), [instances, zones]);
   const pipes = useMemo(() => pipeLengthByZone(instances, zones), [instances, zones]);
   const total = totalPipeLength(pipes);
-  const progress = reviewProgress(instances, issues);
+  const progress = reviewProgress(instances, issues ?? []);
+  const perClass = useMemo(() => countsByZoneAndClass(instances, zones), [instances, zones]);
+  const className = (id: number) => classes.find((c) => c.id === id)?.name ?? String(id);
   const exportRows = useMemo(() => filterInstances(instances, filters), [instances, filters]);
 
   const chartData = perZone.map((r) => ({ zone: r.zone, ...r.counts }));
-  const families = FAMILIES.filter((f) => perZone.some((r) => r.counts[f.id] > 0));
+  const families = SHOWN_FAMILIES.filter((f) => perZone.some((r) => r.counts[f.id] > 0));
 
   const download = () => {
     const blob = new Blob([inventoryCsv(exportRows, classes)], { type: "text/csv;charset=utf-8" });
@@ -69,17 +74,83 @@ export function Dashboard({
     const a = document.createElement("a");
     a.href = url;
     a.download = csvFileName(SCAN_ID, new Date());
+    // In the document while clicking, and the URL kept alive for a moment: Firefox and
+    // Safari can cancel a download whose blob URL is revoked at once (review round 1).
+    document.body.append(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-4 overflow-auto p-3 text-sm">
+    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.75fr)] gap-3 overflow-auto px-3 py-2 text-sm">
       <figure className="flex min-h-0 flex-col">
-        <figcaption className={heading}>Objects per zone, by class family</figcaption>
-        <div className="min-h-40 flex-1" aria-hidden>
+        <div className="flex items-baseline justify-between gap-2">
+          <figcaption className={heading}>
+            {view === "chart" ? "Objects per zone, by class family" : "Objects per zone and class"}
+          </figcaption>
+          <div className="flex gap-1 text-xs" role="group" aria-label="Show as">
+            {(["chart", "table"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={view === v}
+                onClick={() => setView(v)}
+                className={`rounded px-2 py-0.5 whitespace-nowrap ${view === v ? "bg-ink text-white" : "hover:bg-canvas"}`}
+              >
+                {v === "chart" ? "Chart" : "Per class"}
+              </button>
+            ))}
+          </div>
+        </div>
+        {view === "table" && (
+          <div className="min-h-0 flex-1 overflow-auto">
+            <table className="w-full text-xs tabular-nums">
+              <caption className="sr-only">Objects per zone and class</caption>
+              <thead className="sticky top-0 bg-panel text-muted">
+                <tr>
+                  <th scope="col" className="text-left font-medium">
+                    Class
+                  </th>
+                  {zones.map((z) => (
+                    <th
+                      key={z}
+                      scope="col"
+                      className="px-1 text-right font-medium whitespace-nowrap"
+                    >
+                      {z}
+                    </th>
+                  ))}
+                  <th scope="col" className="pl-1 text-right font-medium">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {perClass.map((r) => (
+                  <tr key={r.classId} className="border-t border-line/60">
+                    <th scope="row" className="py-0.5 text-left font-normal">
+                      {className(r.classId)}
+                    </th>
+                    {zones.map((z, n) => (
+                      <td key={z} className="px-1 text-right">
+                        {r.perZone[n] || ""}
+                      </td>
+                    ))}
+                    <td className="pl-1 text-right font-medium">{r.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div className={view === "chart" ? "min-h-36 flex-1" : "hidden"} aria-hidden>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
+            <BarChart
+              accessibilityLayer={false}
+              data={chartData}
+              margin={{ top: 4, right: 4, bottom: 0, left: -24 }}
+            >
               <CartesianGrid vertical={false} stroke="#e3e6ea" />
               <XAxis dataKey="zone" tick={{ fontSize: 11 }} interval={0} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
@@ -135,7 +206,7 @@ export function Dashboard({
             estimate (PCA)
           </abbr>
         </h3>
-        <table aria-labelledby="pipes-heading" className="w-full text-sm tabular-nums">
+        <table aria-labelledby="pipes-heading" className="w-full text-xs tabular-nums">
           <caption className="sr-only">
             Unreliable: pipes whose estimate is not reliable, and their share of the length
           </caption>
@@ -180,6 +251,21 @@ export function Dashboard({
       </section>
 
       <section aria-labelledby="progress-heading" className="flex min-h-0 flex-col gap-3">
+        {/* First, so it stays in view when the panel is short (1280 px, review round 1). */}
+        <div>
+          <button
+            type="button"
+            onClick={download}
+            className="w-full rounded-md bg-ink px-3 py-1.5 text-sm text-white hover:opacity-90"
+          >
+            Export CSV ({exportRows.length} objects)
+          </button>
+          <p className="mt-1 text-xs text-muted">
+            {isFiltering(filters)
+              ? "Only the objects that pass the current filters, with their review status."
+              : "Every object in the inventory, with its review status."}
+          </p>
+        </div>
         <div>
           <h3 id="progress-heading" className={heading}>
             Review progress
@@ -201,24 +287,10 @@ export function Dashboard({
             {(["high", "medium", "low"] as const).map((s) => (
               <li key={s} className="flex items-center justify-between">
                 <SeverityBadge severity={s} />
-                <span className="tabular-nums">{progress.openIssues[s]}</span>
+                <span className="tabular-nums">{issues ? progress.openIssues[s] : "…"}</span>
               </li>
             ))}
           </ul>
-        </div>
-        <div className="mt-auto">
-          <button
-            type="button"
-            onClick={download}
-            className="w-full rounded-md bg-ink px-3 py-1.5 text-sm text-white hover:opacity-90"
-          >
-            Export CSV ({exportRows.length} objects)
-          </button>
-          <p className="mt-1 text-xs text-muted">
-            {isFiltering(filters)
-              ? "Only the objects that pass the current filters, with their review status."
-              : "Every object in the inventory, with its review status."}
-          </p>
         </div>
       </section>
     </div>
