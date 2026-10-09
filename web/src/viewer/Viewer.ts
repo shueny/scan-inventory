@@ -298,8 +298,9 @@ export class Viewer {
         this.camera,
         this.renderer,
       );
-      // Points of loaded nodes only: the loader's numVisiblePoints also counts nodes whose
-      // data has not arrived (or failed), so it is not proof that anything is drawn.
+      // Points of loaded nodes in view: the loader's numVisiblePoints also counts nodes whose
+      // data has not arrived or failed to decode. (Points hidden by the class filter still
+      // count.)
       this.stats.visiblePoints = visibleNodes.reduce((sum, node) => sum + node.numPoints, 0);
     }
     this.renderer.render(this.scene, this.camera);

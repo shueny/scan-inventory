@@ -29,6 +29,8 @@ htmlcov/
 node_modules/
 web/dist/
 web/e2e/.dist/
+web/e2e/fixtures/data.new/
+web/e2e/fixtures/data.old/
 web/playwright-report/
 web/test-results/
 *.tsbuildinfo

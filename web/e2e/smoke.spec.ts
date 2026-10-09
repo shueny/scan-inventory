@@ -17,8 +17,12 @@ const test = base.extend<{ problems: string[] }>({
       });
       page.on("requestfailed", (r) => {
         const why = r.failure()?.errorText ?? "";
-        // A fetch cancelled by a navigation or reload is not a failure.
-        if (why !== "net::ERR_ABORTED") problems.push(`request failed (${why}): ${r.url()}`);
+        // The loader cancels tile fetches it no longer needs (and a reload cancels the rest);
+        // that is normal for tiles only. Every other cancelled request is a failure.
+        const tile = r.url().includes("/data/potree/");
+        if (!(tile && why === "net::ERR_ABORTED")) {
+          problems.push(`request failed (${why}): ${r.url()}`);
+        }
       });
       page.on("response", (r) => {
         if (r.status() >= 400) problems.push(`HTTP ${r.status()}: ${r.url()}`);

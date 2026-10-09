@@ -128,6 +128,7 @@ def main() -> None:
         OUT.parent.mkdir(parents=True, exist_ok=True)
         new, old = OUT.with_name("data.new"), OUT.with_name("data.old")
         shutil.rmtree(new, ignore_errors=True)
+        shutil.rmtree(old, ignore_errors=True)  # left over by an earlier crashed run
         shutil.copytree(staging, new)
         if OUT.exists():
             OUT.rename(old)
