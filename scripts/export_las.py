@@ -11,16 +11,21 @@ Optional deterministic sampling for the public demo build (default: all points):
   --sample 0.13        keep each point with probability 0.13 (fixed seed)
   --voxel-size 0.01    keep the first point in every 1 cm cube
 
+The header date is fixed (CREATION_DATE), so the same input gives the same bytes on
+any day. The file is written to `<out>.tmp` first and renamed only on success.
+
 Usage (from the repo root):
-    uv run --project scripts python scripts/export_las.py --out data/nora.las
-    uv run --project scripts python scripts/export_las.py --out data/nora-demo.las \\
+    uv run --project scripts python scripts/export_las.py --out data/las/nora.las
+    uv run --project scripts python scripts/export_las.py --out data/las/nora-random13.las \\
         --sample 0.13
 """
 
 import argparse
 import json
+import math
 import sys
 import time
+from datetime import date
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -33,6 +38,7 @@ CHUNK = 2_000_000
 SCALE = 0.0001
 SEED = 20261008
 MAX_POINT_SOURCE_ID = 65_535  # uint16
+CREATION_DATE = date(2026, 10, 8)  # fixed, not today: same input -> same bytes
 
 FloatArray = npt.NDArray[np.float64]
 BoolArray = npt.NDArray[np.bool_]
@@ -99,18 +105,33 @@ def make_header(origin: FloatArray) -> laspy.LasHeader:
     header = laspy.LasHeader(point_format=7, version="1.4")
     header.scales = np.array([SCALE, SCALE, SCALE])
     header.offsets = origin
+    header.creation_date = CREATION_DATE
     return header
 
 
-def to_las_points(chunk: Any, header: laspy.LasHeader) -> laspy.ScaleAwarePointRecord:
-    """One PLY chunk (structured array) -> LAS point record."""
-    instance = np.rint(chunk["scalar_instance"]).astype(np.int64)
-    label = np.rint(chunk["scalar_label"]).astype(np.int64)
-    if instance.min() < 0 or instance.max() > MAX_POINT_SOURCE_ID:
-        sys.exit(f"Instance id {instance.min()}..{instance.max()} does not fit point_source_id")
-    if label.min() < 0 or label.max() > 255:
-        sys.exit(f"Class id {label.min()}..{label.max()} does not fit classification")
+def to_int_ids(values: FloatArray, name: str, top: int, field: str) -> IntArray:
+    """PLY float ids -> integers. Stops on NaN/inf or on ids outside 0..top."""
+    if not np.isfinite(values).all():
+        sys.exit(f"{name} is not a number (NaN or inf) for some points")
+    ids: IntArray = np.rint(values).astype(np.int64)
+    if ids.min() < 0 or ids.max() > top:
+        sys.exit(f"{name} {ids.min()}..{ids.max()} does not fit {field}")
+    return ids
 
+
+def read_ids(chunk: Any) -> tuple[IntArray, IntArray]:
+    """Checked instance ids and class ids of one PLY chunk."""
+    instance = to_int_ids(
+        chunk["scalar_instance"], "Instance id", MAX_POINT_SOURCE_ID, "point_source_id"
+    )
+    label = to_int_ids(chunk["scalar_label"], "Class id", 255, "classification")
+    return instance, label
+
+
+def to_las_points(
+    chunk: Any, instance: IntArray, label: IntArray, header: laspy.LasHeader
+) -> laspy.ScaleAwarePointRecord:
+    """One PLY chunk (structured array) and its checked ids -> LAS point record."""
     points = laspy.ScaleAwarePointRecord.zeros(len(chunk), header=header)
     points.x = chunk["x"].astype(np.float64)
     points.y = chunk["y"].astype(np.float64)
@@ -140,6 +161,8 @@ def export(
 ) -> dict[str, Any]:
     vertices = PlyData.read(str(ply_path), mmap=True)["vertex"].data
     n = len(vertices)
+    if n == 0:
+        sys.exit(f"{ply_path} has no points")
     print(f"Pass 1/2: bounds of {n:,} points ...")
     lo, hi = bounds(vertices, chunk)
 
@@ -155,20 +178,26 @@ def export(
     kept_per_instance = np.zeros(MAX_POINT_SOURCE_ID + 1, np.int64)
     total_per_instance = np.zeros(MAX_POINT_SOURCE_ID + 1, np.int64)
     out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_name(out.name + ".tmp")  # same folder, so the rename below is atomic
     t0 = time.time()
     print(f"Pass 2/2: writing {out} ({method}) ...")
-    with laspy.open(out, mode="w", header=header) as writer:
-        for start in range(0, n, chunk):
-            c = np.array(vertices[start : start + chunk])
-            xyz = np.stack([c["x"], c["y"], c["z"]], axis=1).astype(np.float64)
-            keep = sampler.mask(xyz)
-            instance = np.rint(c["scalar_instance"]).astype(np.int64)
-            total_per_instance += np.bincount(instance, minlength=len(total_per_instance))
-            kept_per_instance += np.bincount(instance[keep], minlength=len(kept_per_instance))
-            if keep.any():
-                writer.write_points(to_las_points(c[keep], header))
-            done = min(start + chunk, n)
-            print(f"  {done / n:6.1%}  {time.time() - t0:5.0f} s", end="\r")
+    try:
+        with laspy.open(tmp, mode="w", header=header) as writer:
+            for start in range(0, n, chunk):
+                c = np.array(vertices[start : start + chunk])
+                xyz = np.stack([c["x"], c["y"], c["z"]], axis=1).astype(np.float64)
+                keep = sampler.mask(xyz)
+                instance, label = read_ids(c)
+                total_per_instance += np.bincount(instance, minlength=len(total_per_instance))
+                kept_per_instance += np.bincount(instance[keep], minlength=len(kept_per_instance))
+                if keep.any():
+                    writer.write_points(to_las_points(c[keep], instance[keep], label[keep], header))
+                done = min(start + chunk, n)
+                print(f"  {done / n:6.1%}  {time.time() - t0:5.0f} s", end="\r")
+    except BaseException:  # also sys.exit and Ctrl+C: never leave a half-written file
+        tmp.unlink(missing_ok=True)
+        raise
+    tmp.replace(out)
     print()
 
     present = np.flatnonzero(total_per_instance)
@@ -202,7 +231,7 @@ def main() -> None:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     p.add_argument("--ply", type=Path, default=Path("pointcloud/nora.ply"))
-    p.add_argument("--out", type=Path, default=Path("data/nora.las"))
+    p.add_argument("--out", type=Path, default=Path("data/las/nora.las"))
     sampling = p.add_mutually_exclusive_group()
     sampling.add_argument("--sample", type=float, help="random sampling: fraction to keep")
     sampling.add_argument("--voxel-size", type=float, help="voxel sampling: cube size in metres")
@@ -212,8 +241,8 @@ def main() -> None:
         sys.exit(f"File not found: {args.ply}")
     if args.sample is not None and not 0 < args.sample <= 1:
         sys.exit("--sample must be in (0, 1]")
-    if args.voxel_size is not None and args.voxel_size <= 0:
-        sys.exit("--voxel-size must be positive")
+    if args.voxel_size is not None and not (math.isfinite(args.voxel_size) and args.voxel_size > 0):
+        sys.exit("--voxel-size must be a positive number")
     method = "random" if args.sample else "voxel" if args.voxel_size else "all"
 
     t0 = time.time()

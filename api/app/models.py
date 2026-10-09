@@ -1,4 +1,4 @@
-"""Database tables (ADR 0008).
+"""Database tables (ADR 0009).
 
 Point data never goes into Postgres; only the inventory seeded from the pipeline's JSON
 files and what users change: review status, corrected class, assigned tags, issue status,

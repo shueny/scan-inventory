@@ -1,4 +1,4 @@
-# 0008 · API data model, seeding and test database
+# 0009 · API data model, seeding and test database
 
 Status: accepted by the owner · 2026-10-09 · Task T4
 

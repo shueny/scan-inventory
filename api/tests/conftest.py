@@ -1,4 +1,4 @@
-"""Test database: a throwaway PostgreSQL 16 container (testcontainers, ADR 0008).
+"""Test database: a throwaway PostgreSQL 16 container (testcontainers, ADR 0009).
 
 The container starts once per test run, gets the real Alembic migration, and every test
 starts from the same small synthetic data set in tests/fixtures/.
