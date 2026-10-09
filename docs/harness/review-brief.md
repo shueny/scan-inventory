@@ -30,3 +30,7 @@ A list of findings, most severe first. For each: severity (high = wrong behaviou
 the demo hits; medium = wrong in an edge case, a PRD gap, or a misleading test; low = style,
 naming, small clean-up), file and line, what is wrong, and a concrete way to reproduce or
 check it. Say "no findings" if there are none. Do not edit any file.
+
+Disk is tight on this machine. Do not copy `data/` or the point cloud anywhere; if you clone
+the repo or build anything in a scratch folder, delete it before you finish. Never write to
+the owner's running services (the `docker compose` API on port 8000 is read only for you).

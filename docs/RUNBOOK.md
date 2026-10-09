@@ -55,7 +55,7 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 | harness | CI runs the gate on PRs; smoke test runs in CI | green CI on the harness PR | done (PR #4) |
 | T6 review queue | demo steps 6 and 7 work; every issue type from PRD 5.6 can be resolved | contract tests per resolution; e2e resolves an issue; browser check on real data | done (PR #5) |
 | T7 dashboard + export | demo steps 8 and 9 work in both modes | unit tests for `domain/summary.ts`, `domain/exportCsv.ts`; e2e downloads the CSV (static); browser check in api mode | done (PR #6) |
-| T8 polish + docs | fresh clone + README reproduces the demo; one Playwright smoke of the demo path; recorded performance numbers | README steps run from a clean clone; e2e covers the demo path | not started |
+| T8 polish + docs | fresh clone + README reproduces the demo; one Playwright smoke of the demo path; recorded performance numbers | README steps run from a clean clone; e2e covers the demo path | in progress |
 | T9 demo deployment | demo mode UI (PRD 8.7); tiles on R2 under a versioned path; Pages deploy workflow; Range request returns 206; README links the demo | code + scripts merged; owner runs the account steps in `docs/DEPLOY.md` | not started |
 
 ## Owner-only steps (collected here as they come up)
@@ -112,3 +112,11 @@ None yet.
 - 2026-10-10: T7 review round 3 (last): CI green on e45fb15, 0 high, 0 medium, 4 low (sticky
   header layering, queue error text on the dashboard tab, a real 1.1 s wait in a test, no test
   that chart and table zones agree). All fixed. Loop closed. Merge after CI is green.
+- 2026-10-10: T7 merged (PR #6, CI green on 57c52d1). T8 on branch `t8-docs`: README, compose
+  `web` service (ADR 0014), performance measured on the MacBook Air M3. Review agents had left
+  5.7 GB of data copies in the scratchpad (free disk fell to 6.7 GB); removed, and the reviewer
+  brief now forbids copies and writes to the owner's services.
+- 2026-10-10: T8 fresh-clone check: README steps from a clean clone (13 % tiles, second compose
+  stack on ports 8188/8100/8180) all exit 0 in about 2 minutes; demo steps 1 to 9 pass there
+  (3D pick 3 of 8 clicks on objects, issue resolved and kept after reload, CSV 260 rows). Stack,
+  volume, images and clone removed. Smoke test extended with step 4 (fails without picking).

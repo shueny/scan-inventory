@@ -158,3 +158,29 @@ test("demo steps 8 and 9: dashboard numbers and a CSV export with review status"
   expect(rows).toHaveLength(5);
   expect(rows.find((r) => r.startsWith("1,PSV-1,"))).toMatch(/,confirmed$/);
 });
+
+test("demo step 4: clicking an object in 3D selects it and shows its details", async ({ page }) => {
+  await open(page);
+  const viewer = page.getByTestId("viewer");
+  const box = await viewer.boundingBox();
+  if (!box) throw new Error("no viewer");
+
+  // The fixture objects sit in a row across the middle of the default view; click along it
+  // until one is hit (a click on the background or empty space selects nothing).
+  const detail = page.locator("#detail-heading");
+  for (let fx = 0.2; fx <= 0.8 && (await detail.count()) === 0; fx += 0.04) {
+    for (let fy = 0.4; fy <= 0.6 && (await detail.count()) === 0; fy += 0.05) {
+      await page.mouse.click(box.x + box.width * fx, box.y + box.height * fy);
+      await page.waitForTimeout(100);
+    }
+  }
+
+  await expect(detail).toBeVisible();
+  const objectLine = await page
+    .getByRole("article")
+    .getByText(/^Object \d$/)
+    .textContent();
+  expect(["Object 1", "Object 2", "Object 3", "Object 5", "Object 6"]).toContain(objectLine);
+  // The same object is selected in the table.
+  await expect(table(page).getByRole("row", { selected: true })).toHaveCount(1);
+});

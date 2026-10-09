@@ -292,3 +292,39 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 1. You change pipe 96 to "Piping components" in the review queue. Which dashboard numbers change, and why does no code have to "update the dashboard"?
 2. Why does the CSV writer put a `'` in front of a tag like `=SUM(A1)` but not in front of the number `-0.5`?
 3. The pipe table says "≈ 110.2 m, 24 · 66 %". What does each number mean, and which PRD rule decides "unreliable"?
+
+---
+
+## T8 · Polish and docs
+
+### What was built
+
+- **README.md**:
+  - what the project is, with the honest framing (annotations stand in for AI detections);
+  - an architecture diagram;
+  - how to install the tools (including PotreeConverter on Apple Silicon), get the data, run the pipeline and start the app;
+  - the quality gate, performance numbers, known limitations and the dataset credit.
+- **A `web` service in docker compose** ([ADR 0014](adr/0014-compose-web-service.md)): nginx serves the app, passes `/api` to the API and serves the tiles with Range support. `docker compose up` then gives the whole demo at http://localhost:8088, as demo step 1 says. Ports can be changed in `.env`.
+- **A fresh-clone check**: the README steps were run in a new clone, with the 13 % sample tiles and a second compose stack on other ports, and the demo path was clicked through there.
+- **Performance numbers**, measured on the MacBook Air M3 in a visible Chromium window (Metal):
+  - first points after 1.8 s;
+  - while orbiting close-ups with 108k–342k points drawn, a steady 144 fps (the display's limit);
+  - JS bundle 508 KB gzipped.
+- The Playwright smoke test now covers demo steps 3 to 9 on the fixture plant, including clicking an object in 3D (step 4); it fails if picking is switched off.
+
+### Key concepts
+
+- **Reproducibility is tested, not assumed**: a README is only right if someone (or a script) follows it from a clean clone. The check runs each step and records its exit code and duration.
+- **Level of detail**: the loader draws an octree node only when it would cover enough pixels. From far away the whole plant is the root node (13k points); zooming in fetches finer nodes with Range requests. Speed comes from not loading what you cannot see.
+- **Frame rate is capped by the display**: browsers draw at most once per screen refresh (144 Hz here). A steady 144 fps means "faster than needed", not "exactly this fast".
+- **One origin**: when the app, the API and the tiles come from the same host and port, the browser applies no cross-origin rules, and the app code uses the same paths everywhere.
+
+### Why this way
+
+[ADR 0014](adr/0014-compose-web-service.md) (proposed): nginx serves the app, the API proxy and the tiles from one origin.
+
+### Quiz
+
+1. You open the app and the plant looks coarse until you zoom in. Is that a bug? What decides which tiles are loaded?
+2. Why does the web container proxy `/api` instead of the browser calling the API on port 8000 directly?
+3. The measurement says 144 fps median and minimum. What does that tell you about the GPU, and what would you change to find the real limit?

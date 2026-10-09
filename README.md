@@ -1,0 +1,186 @@
+# scan-inventory
+
+A web platform that turns an annotated laser scan of an industrial plant into a reviewable object inventory. You see the scan in 3D, get the list of objects (valves, flanges, pipes, instruments) by zone and system, linked to the P&ID tag list, and work through a review queue of suspicious results.
+
+**Honest framing.** The objects come from the dataset's *human annotations*, which stand in for "AI detections". The review queue comes from rule-based checks against the P&ID. No model was trained here.
+
+It is a portfolio project. It shows three things:
+1. **Large point clouds in the browser**: 151.9 million points, streamed as Potree tiles with level of detail.
+2. **A product workflow around detections**: present, verify, correct, report.
+3. **A clear architecture**: an offline pipeline, a typed API, persistence, containerised services, and one UI that runs against two interchangeable data sources.
+
+The full specification is [docs/PRD.md](docs/PRD.md). Every decision is in [docs/adr/](docs/adr/), and every task is explained in [docs/LEARNING.md](docs/LEARNING.md).
+
+## What you can do
+
+1. Open the scan. It streams in and is coloured by object class. Structure and floor can be shown in grey or hidden.
+2. Filter the inventory by zone, system, class, review status or tag. The 3D view outlines the objects that match.
+3. Click an object in 3D or in the table. The camera flies to it, and the detail panel shows its class, P&ID tag, element, nominal size, system, zone, point count and size.
+4. Review it: confirm it, reject it, or change its class, with a note. Every change is kept in its history.
+5. Work through the review queue: 45 issues, sorted by severity. For example, "P&ID says safety valve, annotation says Piping components".
+6. See the dashboard: objects per zone and class family, estimated pipe length per zone (with the unreliable share), and review progress.
+7. Export the inventory as CSV, including the review status.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph offline["Offline pipeline (Python, scripts/)"]
+    ply["pointcloud/nora.ply<br/>3.25 GB, 151.9M points"]
+    meta["meta/classes.json<br/>meta/pnid_composition.csv"]
+    inst["build_instances.py<br/>instances.json"]
+    iss["build_issues.py<br/>issues.json"]
+    sm["build_scan_meta.py<br/>scan.json"]
+    las["export_las.py<br/>LAS 1.4"]
+    pc["PotreeConverter 2.1.2<br/>data/potree/nora"]
+    ply --> inst
+    meta --> inst
+    inst --> iss
+    meta --> iss
+    inst --> sm
+    ply --> las --> pc
+  end
+  subgraph runtime["Local full mode (docker compose)"]
+    web["web: nginx<br/>React app, /api proxy, /potree tiles"]
+    api["api: FastAPI"]
+    db[("db: PostgreSQL 16")]
+    web -->|/api| api --> db
+  end
+  inst & iss & sm -->|seed| api
+  pc -->|Range requests| web
+```
+
+- **Heavy work offline, light work at runtime.** The 3.25 GB file is processed once. At runtime only pre-built tiles and small JSON files are served.
+- **One interface, two data sources** ([ADR 0010](docs/adr/0010-data-sources-contract-and-panels.md)):
+  - `ApiDataSource`: FastAPI and Postgres (local full mode).
+  - `StaticDataSource`: the JSON files, with review changes kept in the browser (public demo).
+
+  The same contract test suite runs against both.
+- **One contract.** The API's OpenAPI schema generates the frontend's TypeScript types, and a test fails if they drift apart.
+
+| folder | what | tooling |
+|---|---|---|
+| `scripts/` | offline pipeline | uv, Python 3.12, numpy, plyfile, laspy |
+| `api/` | FastAPI service | FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16 |
+| `web/` | React app | React 18, TypeScript, Vite, Three.js 0.160, `@pnext/three-loader`, Zustand, TanStack Query, Recharts, Tailwind |
+| `docs/` | spec, ADRs, learning log, runbook | |
+
+## Run it (macOS, Apple Silicon)
+
+### 1. Tools
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/), running.
+- [uv](https://docs.astral.sh/uv/).
+- Node.js 22 and pnpm 10 (`corepack enable`).
+- Build tools for PotreeConverter, which has no macOS binary ([ADR 0004](docs/adr/0004-potreeconverter-native-macos-build.md)):
+  ```bash
+  brew install gcc tbb cmake ninja
+  ```
+
+```bash
+git clone https://github.com/shueny/scan-inventory.git
+cd scan-inventory
+make install
+```
+
+### 2. Data
+
+Download the NORA dataset (SENAI ISI-SIM, CC BY 4.0, [doi:10.5281/zenodo.21775624](https://doi.org/10.5281/zenodo.21775624)) and put these files in place. They are never committed.
+
+```
+pointcloud/nora.ply
+meta/classes.json
+meta/pnid_composition.csv
+```
+
+### 3. Pipeline
+
+Run from the repo root. Every step writes to `data/`, which is gitignored.
+
+```bash
+uv run --project scripts python scripts/build_instances.py   # data/instances.json, instances.csv
+uv run --project scripts python scripts/build_issues.py      # data/issues.json (45 issues)
+uv run --project scripts python scripts/build_scan_meta.py   # data/scan.json (classes, colours, zones)
+```
+
+Point cloud tiles. Build PotreeConverter once (about 20 s):
+
+```bash
+scripts/potree/build_converter.sh
+```
+
+Then pick one of the two tile sets:
+
+- **The full scan:** a 5.1 GB LAS file, about 50 s to export, and 3.0 GB of tiles.
+  ```bash
+  uv run --project scripts python scripts/export_las.py --out data/las/nora.las
+  scripts/build_potree.sh data/las/nora.las data/potree/nora
+  ```
+- **A 13 % sample:** 20M points, a 680 MB LAS file and 400 MB of tiles. Enough for development and the public demo ([ADR 0006](docs/adr/0006-demo-sampling.md)).
+  ```bash
+  uv run --project scripts python scripts/export_las.py --out data/las/nora-random13.las --sample 0.13
+  scripts/build_potree.sh data/las/nora-random13.las data/potree/nora
+  ```
+
+The LAS file is only needed to build the tiles; you can delete it afterwards.
+
+### 4. Start
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Open **http://localhost:8088**.
+
+- The `api` container migrates the database and loads the pipeline's JSON once. Review decisions survive restarts.
+- Ports can be changed in `.env` (`WEB_PORT`, `API_PORT`, `TILES_PORT`).
+
+### Development
+
+```bash
+pnpm --dir web dev                       # http://localhost:5173, static mode (no API needed)
+VITE_DATA_MODE=api pnpm --dir web dev    # api mode, uses the API from docker compose
+```
+
+Add `?stats` to the URL to see the frame rate and the points drawn.
+
+## Quality gate
+
+```bash
+make gate
+```
+
+This runs:
+- ruff, mypy and pytest for `scripts/` and `api/`. The API tests run on a throwaway Postgres (testcontainers), so Docker must be running.
+- tsc, eslint, prettier and Vitest for `web/`.
+- The data source contract tests against the real API.
+- A Playwright smoke test of demo steps 3 to 9 (including clicking an object in 3D), on a small synthetic plant committed in `web/e2e/fixtures/`.
+- pre-commit.
+
+CI runs the same steps on every pull request. The process is in [docs/RUNBOOK.md](docs/RUNBOOK.md).
+
+## Performance
+
+Measured on a MacBook Air M3 (24 GB) in Chromium (Metal), with a production build serving the full tiles locally and a 3M point budget:
+
+| | |
+|---|---|
+| first points on screen | 1.8 s |
+| whole-plant view | coarse root tile only (13k points); detail streams in as you zoom in |
+| orbiting close-ups, 108k–342k points drawn | 144 fps median and minimum: the 144 Hz display's limit, so the GPU has headroom |
+| JS bundle | 508 KB gzipped (budget 1 MB) |
+| first screen download | about 0.3 MB (tile metadata, hierarchy, root tile) |
+
+## Known limitations
+
+- **3D colours never change:** they come from the tiles, so a corrected object keeps its annotated colour in 3D. The table, the counts and the detail panel show the corrected class.
+- **Filtering doesn't dim objects in 3D:** the loader cannot dim single objects, so the 3D view outlines the objects that pass instead ([ADR 0010](docs/adr/0010-data-sources-contract-and-panels.md)).
+- **Pipe lengths are rough:** they are PCA estimates and wrong for bent or branched pipes. The dashboard shows the unreliable share.
+- **Tag assignment and "tag missing" issues aren't linked:** assigning a P&ID tag does not close that tag's "missing" issue ([ADR 0012](docs/adr/0012-review-queue.md)).
+- **No public demo yet:** it is task T9 (Cloudflare Pages + R2, behind Cloudflare Access).
+- **Desktop only:** mobile is out of scope.
+
+## Data and licence
+
+Data: NORA dataset, SENAI ISI-SIM, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), [doi:10.5281/zenodo.21775624](https://doi.org/10.5281/zenodo.21775624). The app shows this credit in its footer.
