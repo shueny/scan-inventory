@@ -4,6 +4,8 @@ import { NO_FILTERS, type InstanceFilters, type Sort } from "../domain/filters";
 export type ColorMode = "class" | "rgb";
 /** What the panel under the 3D view shows. */
 export type BottomTab = "inventory" | "queue";
+/** Which issues the review queue lists. */
+export type QueueView = "open" | "closed";
 
 /**
  * UI state shared by the 3D viewer, the filter panel, the table and the detail panel
@@ -17,6 +19,7 @@ export interface ViewState {
   filters: InstanceFilters;
   sort: Sort;
   bottomTab: BottomTab;
+  queueView: QueueView;
   selectedIssueId: string | null;
   select: (id: number | null) => void;
   setColorMode: (mode: ColorMode) => void;
@@ -26,6 +29,7 @@ export interface ViewState {
   /** Sort by a column; the same column again flips the direction. */
   sortBy: (key: Sort["key"]) => void;
   setBottomTab: (tab: BottomTab) => void;
+  setQueueView: (view: QueueView) => void;
   /** Select an issue and its first object (null: none), so 3D and details follow. */
   selectIssue: (issueId: string | null, firstInstanceId: number | null) => void;
 }
@@ -37,6 +41,7 @@ export const useViewStore = create<ViewState>()((set) => ({
   filters: NO_FILTERS,
   sort: { key: "tag", dir: "asc" },
   bottomTab: "inventory",
+  queueView: "open",
   selectedIssueId: null,
   select: (id) => set({ selectedId: id }),
   setColorMode: (colorMode) => set({ colorMode }),
@@ -48,6 +53,7 @@ export const useViewStore = create<ViewState>()((set) => ({
       sort: { key, dir: s.sort.key === key && s.sort.dir === "asc" ? "desc" : "asc" },
     })),
   setBottomTab: (bottomTab) => set({ bottomTab }),
+  setQueueView: (queueView) => set({ queueView }),
   selectIssue: (selectedIssueId, firstInstanceId) =>
     set({ selectedIssueId, selectedId: firstInstanceId }),
 }));

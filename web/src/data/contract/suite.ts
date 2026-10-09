@@ -141,6 +141,7 @@ export function contractSuite(name: string, fresh: () => Promise<ScanDataSource>
         "untagged_equipment:2",
         "tag_split:P-9",
         "estimate_unreliable:3",
+        "zone_borrowed:5",
       ]);
       expect(new Set(issues.map((i) => i.status))).toEqual(new Set(["open"]));
       expect(issues[2]?.candidate_tags[0]?.tag).toBe("PT-9");

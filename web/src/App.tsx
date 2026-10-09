@@ -2,6 +2,7 @@ import { FilterPanel } from "./components/FilterPanel";
 import { InstanceDetail } from "./components/InstanceDetail";
 import { InventoryTable } from "./components/InventoryTable";
 import { ReviewQueue } from "./components/ReviewQueue";
+import { panelId, tabId, Tabs } from "./components/Tabs";
 import { useInstance, useInstances, useIssues, useScan } from "./data/hooks";
 import { isOpen } from "./domain/issues";
 import { useViewStore } from "./state/viewStore";
@@ -52,39 +53,26 @@ export function App() {
             aria-label="Inventory and review"
             className="flex min-h-0 flex-col border-t border-line bg-panel"
           >
-            <div
-              role="tablist"
-              aria-label="Lists"
-              className="flex gap-1 border-b border-line px-2 pt-1"
-            >
-              {(
-                [
-                  ["inventory", "Inventory"],
-                  ["queue", `Review queue${openCount !== undefined ? ` (${openCount})` : ""}`],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  role="tab"
-                  id={`tab-${value}`}
-                  aria-selected={bottomTab === value}
-                  aria-controls={`panel-${value}`}
-                  onClick={() => setBottomTab(value)}
-                  className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${
-                    bottomTab === value
-                      ? "border-ink font-medium text-ink"
-                      : "border-transparent text-muted hover:text-ink"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="border-b border-line">
+              <Tabs
+                group="lists"
+                label="Lists"
+                variant="underline"
+                items={[
+                  { value: "inventory", label: "Inventory" },
+                  {
+                    value: "queue",
+                    label: `Review queue${openCount !== undefined ? ` (${openCount})` : ""}`,
+                  },
+                ]}
+                selected={bottomTab}
+                onSelect={setBottomTab}
+              />
             </div>
             <div
               role="tabpanel"
-              id={`panel-${bottomTab}`}
-              aria-labelledby={`tab-${bottomTab}`}
+              id={panelId("lists", bottomTab)}
+              aria-labelledby={tabId("lists", bottomTab)}
               className="min-h-0 flex-1"
             >
               {bottomTab === "inventory" && scan.data && instances.data && (

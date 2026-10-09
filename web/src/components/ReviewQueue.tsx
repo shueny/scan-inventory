@@ -1,11 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ClassInfo, Instance, Issue } from "../data/types";
 import { closedIssues, isOpen, sortIssues, TYPE_LABEL } from "../domain/issues";
 import { useViewStore } from "../state/viewStore";
 import { IssuePanel } from "./IssuePanel";
 import { SeverityBadge } from "./SeverityBadge";
-
-type View = "open" | "closed";
+import { panelId, tabId, Tabs } from "./Tabs";
 
 /**
  * Review queue (PRD 8.5): open issues sorted high to low severity and grouped by type,
@@ -21,7 +20,9 @@ export function ReviewQueue({
   instances: Instance[];
   classes: ClassInfo[];
 }) {
-  const [view, setView] = useState<View>("open");
+  // In the store, so it survives switching to the Inventory tab and back.
+  const view = useViewStore((s) => s.queueView);
+  const setView = useViewStore((s) => s.setQueueView);
   const selectedIssueId = useViewStore((s) => s.selectedIssueId);
   const selectIssue = useViewStore((s) => s.selectIssue);
 
@@ -33,32 +34,24 @@ export function ReviewQueue({
   return (
     <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)_24rem]">
       <div className="flex min-h-0 flex-col border-r border-line">
-        <div
-          role="tablist"
-          aria-label="Issue status"
-          className="flex gap-1 border-b border-line px-2 py-1"
-        >
-          {(
-            [
-              ["open", `Open (${open.length})`],
-              ["closed", `Resolved (${closed.length})`],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              role="tab"
-              aria-selected={view === value}
-              onClick={() => setView(value)}
-              className={`rounded px-2.5 py-1 text-xs ${
-                view === value ? "bg-ink text-white" : "text-ink hover:bg-canvas"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="border-b border-line">
+          <Tabs
+            group="queue"
+            label="Issue status"
+            items={[
+              { value: "open", label: `Open (${open.length})` },
+              { value: "closed", label: `Resolved (${closed.length})` },
+            ]}
+            selected={view}
+            onSelect={setView}
+          />
         </div>
-        <div role="tabpanel" className="min-h-0 flex-1 overflow-auto">
+        <div
+          role="tabpanel"
+          id={panelId("queue", view)}
+          aria-labelledby={tabId("queue", view)}
+          className="min-h-0 flex-1 overflow-auto"
+        >
           {shown.length === 0 ? (
             <p className="p-4 text-sm text-muted">
               {view === "open"
@@ -123,7 +116,9 @@ function IssueList({
               aria-current={selected || undefined}
               onClick={() => onSelect(issue)}
               className={`flex w-full flex-col items-start border-b border-line/60 px-3 py-1.5 text-left text-sm ${
-                selected ? "bg-accent/10" : "hover:bg-canvas"
+                selected
+                  ? "bg-accent/10 font-medium shadow-[inset_3px_0_0_var(--color-ink)]"
+                  : "hover:bg-canvas"
               }`}
             >
               <span>{issue.title}</span>

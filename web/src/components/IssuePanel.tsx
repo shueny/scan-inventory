@@ -60,7 +60,12 @@ export function IssuePanel({
       )}
 
       {issue.status === "open" ? (
-        <Resolve issue={issue} classes={classes} className={className} />
+        <Resolve
+          issue={issue}
+          classes={classes}
+          className={className}
+          currentClassId={byId.get(issue.instance_ids[0] ?? -1)?.current_class_id ?? null}
+        />
       ) : (
         <Closed issue={issue} classes={classes} />
       )}
@@ -72,16 +77,21 @@ function Resolve({
   issue,
   classes,
   className,
+  currentClassId,
 }: {
   issue: Issue;
   classes: ClassInfo[];
   className: (id: number | null) => string;
+  /** Class of the issue's (first) object now; the class dropdown starts there. */
+  currentClassId: number | null;
 }) {
   const resolve = useResolveIssue();
   const [note, setNote] = useState("");
   const firstCandidate = issue.candidate_tags[0]?.tag ?? "";
   const [tag, setTag] = useState(firstCandidate);
-  const [classId, setClassId] = useState(issue.suggested_class_id ?? classes[0]?.id ?? 0);
+  // Start on the object's own class (review round 1: starting on the first class in the
+  // list, "Structural", let one click turn any object into the background).
+  const [classId, setClassId] = useState<number | null>(currentClassId);
   const actions = issueActions(issue);
   const busy = resolve.isPending;
 
@@ -159,10 +169,11 @@ function Resolve({
           </label>
           <select
             id="issue-class"
-            value={classId}
+            value={classId ?? ""}
             onChange={(e) => setClassId(Number(e.target.value))}
             className="min-w-0 flex-1 rounded-md border border-line px-2 py-1"
           >
+            {classId === null && <option value="">Choose a class</option>}
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -172,8 +183,8 @@ function Resolve({
           <button
             type="button"
             className={button}
-            disabled={busy}
-            onClick={() => send({ action: "change_class", class_id: classId })}
+            disabled={busy || classId === null || classId === currentClassId}
+            onClick={() => classId !== null && send({ action: "change_class", class_id: classId })}
           >
             Change class
           </button>

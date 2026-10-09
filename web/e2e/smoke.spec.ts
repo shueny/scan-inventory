@@ -1,6 +1,6 @@
 import { expect, test as base, type Page } from "@playwright/test";
 
-// The demo path on the fixture plant (6 objects, 5 issues; e2e/fixtures/data).
+// The demo path on the fixture plant (6 objects, 6 issues; e2e/fixtures/data).
 // Each test starts with empty browser storage, so review changes never leak between tests.
 
 /**
@@ -95,7 +95,7 @@ test("demo steps 6 and 7: resolve an issue from the queue, kept after a reload",
   await open(page);
   const lists = page.getByRole("region", { name: "Inventory and review" });
 
-  await lists.getByRole("tab", { name: "Review queue (5)" }).click();
+  await lists.getByRole("tab", { name: "Review queue (6)" }).click();
   // Sorted by severity: the class mismatch (high) comes first.
   await expect(lists.getByRole("button", { name: /^class_mismatch:1/ })).toBeVisible();
   const first = lists.getByRole("listitem").first();
@@ -108,10 +108,10 @@ test("demo steps 6 and 7: resolve an issue from the queue, kept after a reload",
   await lists
     .getByRole("button", { name: /Accept: change class to Pressure safety valve/ })
     .click();
-  await expect(lists.getByRole("tab", { name: "Open (4)" })).toBeVisible();
+  await expect(lists.getByRole("tab", { name: "Open (5)" })).toBeVisible();
 
   await page.reload();
-  await page.getByRole("tab", { name: "Review queue (4)" }).click();
+  await page.getByRole("tab", { name: "Review queue (5)" }).click();
   await page.getByRole("tab", { name: "Resolved (1)" }).click();
   await page.getByRole("button", { name: /class_mismatch:1/ }).click();
   await expect(

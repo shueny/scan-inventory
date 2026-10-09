@@ -65,7 +65,9 @@ None yet.
 ## Proposals for the owner (not done; no silent scope growth)
 
 - T6: assigning a P&ID tag to an object could also close the `tag_missing_in_scan` issue for that
-  tag (ADR 0012, consequences).
+  tag, and drop already-used tags from other objects' candidates (ADR 0012, consequences).
+- T6: filter the queue with the inventory filters; "next open issue" after resolving; more room
+  for the queue at 1280 px.
 
 ## Log
 
@@ -79,3 +81,7 @@ None yet.
 - 2026-10-09: harness review round 3: CI green on 19f9119 (run 37987459550), 0 high, 0 medium,
   3 low (all fixed). Loop closed. Merged to main (PR #4).
 - 2026-10-09: T6 built on branch `t6-review-queue`; ADR 0012.
+- 2026-10-09: T6 review round 1 (CI green on 6bd13b3): 1 high (queue "Change class" started on
+  Structural), 4 medium (no zone_borrowed in the fixtures; tag/issue linking; ARIA tabs; api mode
+  only via contract tests), 5 low. High and 2 mediums fixed with tests; tag linking proposed to
+  the owner; api-mode risk accepted in ADR 0012; 2 lows fixed, 3 noted.

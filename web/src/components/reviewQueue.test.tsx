@@ -11,7 +11,7 @@ import { useViewStore } from "../state/viewStore";
 import { ReviewQueue } from "./ReviewQueue";
 
 // The real StaticDataSource on the committed fixture plant (scan "nora", 6 objects,
-// 5 issues), so these tests go through the same resolve rules as the demo.
+// 6 issues), so these tests go through the same resolve rules as the demo.
 const FIXTURES = join(process.cwd(), "e2e", "fixtures", "data");
 const fetchFixture = (url: string) =>
   Promise.resolve(new Response(readFileSync(join(FIXTURES, url.replace(/^\/data\//, "")), "utf8")));
@@ -42,13 +42,15 @@ function renderQueue() {
   return source;
 }
 
-beforeEach(() => useViewStore.setState({ selectedId: null, selectedIssueId: null }));
+beforeEach(() =>
+  useViewStore.setState({ selectedId: null, selectedIssueId: null, queueView: "open" }),
+);
 
 describe("ReviewQueue", () => {
   it("lists open issues high to low severity, grouped by type", async () => {
     renderQueue();
 
-    expect(await screen.findByRole("tab", { name: "Open (5)" })).toHaveAttribute(
+    expect(await screen.findByRole("tab", { name: "Open (6)" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
@@ -59,6 +61,7 @@ describe("ReviewQueue", () => {
       "■MediumUntagged equipment (1)",
       "●LowTag split (1)",
       "●LowEstimate unreliable (1)",
+      "●LowZone borrowed (1)",
     ]);
   });
 
@@ -86,7 +89,7 @@ describe("ReviewQueue", () => {
       screen.getByRole("button", { name: "✓ Accept: change class to Pressure safety valve" }),
     );
 
-    expect(await screen.findByRole("tab", { name: "Open (4)" })).toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: "Open (5)" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Resolved" })).toBeInTheDocument();
     expect(screen.getAllByText("#1")).toHaveLength(2); // class change and status change
     expect(
@@ -126,6 +129,7 @@ describe("ReviewQueue", () => {
       "estimate_unreliable:3",
       "untagged_equipment:2",
       "class_mismatch:1",
+      "zone_borrowed:5",
     ]) {
       await user.click(screen.getByRole("tab", { name: /^Open/ }));
       await user.click(screen.getByRole("button", { name: id }));
@@ -136,5 +140,39 @@ describe("ReviewQueue", () => {
     expect(screen.getByRole("tab", { name: "Open (0)" })).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Open (0)" }));
     expect(screen.getByText("No open issues. Everything is reviewed.")).toBeInTheDocument();
+  });
+
+  it("change class starts on the object's current class, never on a default one", async () => {
+    const user = userEvent.setup();
+    const source = renderQueue();
+    await user.click(await screen.findByRole("button", { name: "estimate_unreliable:3" }));
+
+    const select = screen.getByRole("combobox", { name: "Class for the object" });
+    expect(select).toHaveValue("8"); // the pipe's own class, not the first in the list
+    const change = screen.getByRole("button", { name: "Change class" });
+    expect(change).toBeDisabled();
+
+    await user.selectOptions(select, "Manual wheel valve");
+    await user.click(change);
+
+    expect(await screen.findByText("Class: Pipe → Manual wheel valve")).toBeInTheDocument();
+    expect((await source.getInstance("nora", 3)).current_class_id).toBe(1);
+  });
+
+  it("assigns a typed tag when none of the candidates fits", async () => {
+    const user = userEvent.setup();
+    const source = renderQueue();
+    await user.click(await screen.findByRole("button", { name: "untagged_equipment:2" }));
+
+    const assign = screen.getByRole("group", { name: "Assign a P&ID tag" });
+    const field = within(assign).getByRole("textbox", { name: "Tag" });
+    await user.clear(field);
+    expect(within(assign).getByRole("button", { name: "Assign tag" })).toBeDisabled();
+    await user.type(field, "PT-77X");
+    expect(within(assign).getByRole("radio", { name: /PT-9/ })).not.toBeChecked();
+    await user.click(within(assign).getByRole("button", { name: "Assign tag" }));
+
+    expect(await screen.findByText("Tag assigned: PT-77X")).toBeInTheDocument();
+    expect((await source.getInstance("nora", 2)).all_tags).toEqual(["PT-77X"]);
   });
 });

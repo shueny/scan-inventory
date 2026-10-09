@@ -148,7 +148,7 @@ def test_patch_unknown_instance_is_404(client: TestClient) -> None:
 def test_issues_sorted_high_to_low_and_filterable(client: TestClient) -> None:
     issues = client.get(f"{BASE}/issues").json()
 
-    assert [i["severity"] for i in issues] == ["high", "medium", "medium", "low", "low"]
+    assert [i["severity"] for i in issues] == ["high", "medium", "medium", "low", "low", "low"]
     assert all(i["status"] == "open" for i in issues)
     medium = client.get(f"{BASE}/issues", params={"severity": "medium"}).json()
     assert {i["issue_id"] for i in medium} == {

@@ -1,6 +1,6 @@
 {
  "scan_id": "nora",
- "issue_count": 5,
+ "issue_count": 6,
  "issues": [
   {
    "issue_id": "class_mismatch:1",
@@ -79,6 +79,22 @@
    "tags": [],
    "title": "estimate_unreliable:3",
    "detail": "estimate_unreliable:3",
+   "suggested_action": null,
+   "suggested_class_id": null,
+   "candidate_tags": []
+  },
+  {
+   "issue_id": "zone_borrowed:5",
+   "type": "zone_borrowed",
+   "severity": "low",
+   "instance_ids": [
+    5
+   ],
+   "tags": [
+    "VG-5"
+   ],
+   "title": "zone_borrowed:5",
+   "detail": "zone_borrowed:5",
    "suggested_action": null,
    "suggested_class_id": null,
    "candidate_tags": []

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * The API's own test data (api/tests/fixtures/): scan "test", 6 objects, 5 issues.
+ * The API's own test data (api/tests/fixtures/): scan "test", 6 objects, 6 issues.
  * Both data sources are checked against it, so they are compared on identical data.
  */
 // Tests run from web/ (pnpm scripts). import.meta.url is not a file: URL under jsdom.

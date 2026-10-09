@@ -23,7 +23,7 @@ def test_seed_is_idempotent_and_keeps_review_changes(sessions: sessionmaker[Sess
         assert seed(session, FIXTURES) is False  # already seeded by the fixture
 
         assert count(session, models.Instance) == 6
-        assert count(session, models.Issue) == 5
+        assert count(session, models.Issue) == 6
         assert count(session, models.ScanClass) == 7
         again = session.get(models.Instance, ("test", 5))
         assert again is not None and again.review_status == "confirmed"
@@ -39,7 +39,7 @@ def test_seed_sets_current_class_and_issue_order(sessions: sessionmaker[Session]
             "unreviewed",
         )
         orders = session.scalars(select(models.Issue.sort_order).order_by(models.Issue.sort_order))
-        assert list(orders) == [0, 1, 2, 3, 4]
+        assert list(orders) == [0, 1, 2, 3, 4, 5]
 
 
 def test_migration_matches_the_models(engine: Engine) -> None:

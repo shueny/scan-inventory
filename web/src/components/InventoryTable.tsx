@@ -95,7 +95,9 @@ export function InventoryTable({
                     }
                   }}
                   className={`cursor-pointer border-b border-line/60 ${
-                    selected ? "bg-accent/10" : "hover:bg-canvas"
+                    selected
+                      ? "bg-accent/10 font-medium shadow-[inset_3px_0_0_var(--color-ink)]"
+                      : "hover:bg-canvas"
                   }`}
                 >
                   <td className="px-3 py-1 font-medium whitespace-nowrap">
