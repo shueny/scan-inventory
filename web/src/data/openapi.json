@@ -571,6 +571,13 @@
             "title": "Detail",
             "type": "string"
           },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewEventOut"
+            },
+            "title": "History",
+            "type": "array"
+          },
           "instance_ids": {
             "items": {
               "type": "integer"
@@ -661,7 +668,8 @@
           "suggested_action",
           "suggested_class_id",
           "candidate_tags",
-          "status"
+          "status",
+          "history"
         ],
         "title": "IssueOut",
         "type": "object"

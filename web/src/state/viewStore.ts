@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { NO_FILTERS, type InstanceFilters, type Sort } from "../domain/filters";
 
 export type ColorMode = "class" | "rgb";
+/** What the panel under the 3D view shows. */
+export type BottomTab = "inventory" | "queue";
 
 /**
  * UI state shared by the 3D viewer, the filter panel, the table and the detail panel
@@ -14,6 +16,8 @@ export interface ViewState {
   backgroundVisible: boolean;
   filters: InstanceFilters;
   sort: Sort;
+  bottomTab: BottomTab;
+  selectedIssueId: string | null;
   select: (id: number | null) => void;
   setColorMode: (mode: ColorMode) => void;
   setBackgroundVisible: (visible: boolean) => void;
@@ -21,6 +25,9 @@ export interface ViewState {
   resetFilters: () => void;
   /** Sort by a column; the same column again flips the direction. */
   sortBy: (key: Sort["key"]) => void;
+  setBottomTab: (tab: BottomTab) => void;
+  /** Select an issue and its first object (null: none), so 3D and details follow. */
+  selectIssue: (issueId: string | null, firstInstanceId: number | null) => void;
 }
 
 export const useViewStore = create<ViewState>()((set) => ({
@@ -29,6 +36,8 @@ export const useViewStore = create<ViewState>()((set) => ({
   backgroundVisible: true, // shown in muted grey by default (ADR 0007)
   filters: NO_FILTERS,
   sort: { key: "tag", dir: "asc" },
+  bottomTab: "inventory",
+  selectedIssueId: null,
   select: (id) => set({ selectedId: id }),
   setColorMode: (colorMode) => set({ colorMode }),
   setBackgroundVisible: (backgroundVisible) => set({ backgroundVisible }),
@@ -38,4 +47,7 @@ export const useViewStore = create<ViewState>()((set) => ({
     set((s) => ({
       sort: { key, dir: s.sort.key === key && s.sort.dir === "asc" ? "desc" : "asc" },
     })),
+  setBottomTab: (bottomTab) => set({ bottomTab }),
+  selectIssue: (selectedIssueId, firstInstanceId) =>
+    set({ selectedIssueId, selectedId: firstInstanceId }),
 }));

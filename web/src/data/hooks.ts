@@ -1,7 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SCAN_ID } from "../config";
 import { useDataSource } from "./DataSourceProvider";
-import type { Instance, InstanceChange, InstanceDetail } from "./types";
+import type {
+  Instance,
+  InstanceChange,
+  InstanceDetail,
+  Issue,
+  Resolution,
+  ResolveResult,
+} from "./types";
 
 // Server state goes through TanStack Query: cached, shared between components,
 // loading and error states for free. Query keys start with the scan id.
@@ -56,6 +63,34 @@ export function useUpdateInstance(id: number) {
         list?.map((i) => (i.instance_id === id ? withoutHistory(detail) : i)),
       );
       void client.invalidateQueries({ queryKey: keys.issues });
+    },
+  });
+}
+
+/**
+ * Resolve or dismiss an issue (PRD 8.5). The answer holds the closed issue and every
+ * object it changed; both replace their cached copies, so the queue, the table, the
+ * detail panel and the 3D view update together.
+ */
+export function useResolveIssue() {
+  const source = useDataSource();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ issueId, resolution }: { issueId: string; resolution: Resolution }) =>
+      source.resolveIssue(SCAN_ID, issueId, resolution),
+    onSuccess: ({ issue, instances }: ResolveResult) => {
+      client.setQueryData<Issue[]>(keys.issues, (list) =>
+        list?.map((i) => (i.issue_id === issue.issue_id ? issue : i)),
+      );
+      const changed = new Map(instances.map((d) => [d.instance_id, d]));
+      for (const detail of instances)
+        client.setQueryData(keys.instance(detail.instance_id), detail);
+      client.setQueryData<Instance[]>(keys.instances, (list) =>
+        list?.map((i) => {
+          const detail = changed.get(i.instance_id);
+          return detail ? withoutHistory(detail) : i;
+        }),
+      );
     },
   });
 }

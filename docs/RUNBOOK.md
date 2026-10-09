@@ -53,7 +53,7 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 | task | PRD "done when" | proof | status |
 |---|---|---|---|
 | harness | CI runs the gate on PRs; smoke test runs in CI | green CI on the harness PR | done (PR #4) |
-| T6 review queue | demo steps 6 and 7 work; every issue type from PRD 5.6 can be resolved | contract tests per resolution; e2e resolves an issue; browser check on real data | not started |
+| T6 review queue | demo steps 6 and 7 work; every issue type from PRD 5.6 can be resolved | contract tests per resolution; e2e resolves an issue; browser check on real data | in review |
 | T7 dashboard + export | demo steps 8 and 9 work in both modes | unit tests for `domain/summary.ts`, `domain/exportCsv.ts`; e2e downloads the CSV (static); browser check in api mode | not started |
 | T8 polish + docs | fresh clone + README reproduces the demo; one Playwright smoke of the demo path; recorded performance numbers | README steps run from a clean clone; e2e covers the demo path | not started |
 | T9 demo deployment | demo mode UI (PRD 8.7); tiles on R2 under a versioned path; Pages deploy workflow; Range request returns 206; README links the demo | code + scripts merged; owner runs the account steps in `docs/DEPLOY.md` | not started |
@@ -61,6 +61,11 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 ## Owner-only steps (collected here as they come up)
 
 None yet.
+
+## Proposals for the owner (not done; no silent scope growth)
+
+- T6: assigning a P&ID tag to an object could also close the `tag_missing_in_scan` issue for that
+  tag (ADR 0012, consequences).
 
 ## Log
 
@@ -72,4 +77,5 @@ None yet.
   nodes not yet loaded), 6 low. All confirmed and fixed. Lesson for the loop: a round is only
   closed when CI on the pushed fix is green, not when the local gate is.
 - 2026-10-09: harness review round 3: CI green on 19f9119 (run 37987459550), 0 high, 0 medium,
-  3 low (all fixed). Loop closed.
+  3 low (all fixed). Loop closed. Merged to main (PR #4).
+- 2026-10-09: T6 built on branch `t6-review-queue`; ADR 0012.

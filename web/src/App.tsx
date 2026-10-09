@@ -1,7 +1,9 @@
 import { FilterPanel } from "./components/FilterPanel";
 import { InstanceDetail } from "./components/InstanceDetail";
 import { InventoryTable } from "./components/InventoryTable";
-import { useInstance, useInstances, useScan } from "./data/hooks";
+import { ReviewQueue } from "./components/ReviewQueue";
+import { useInstance, useInstances, useIssues, useScan } from "./data/hooks";
+import { isOpen } from "./domain/issues";
 import { useViewStore } from "./state/viewStore";
 import { ViewerCanvas } from "./viewer/ViewerCanvas";
 
@@ -9,6 +11,10 @@ import { ViewerCanvas } from "./viewer/ViewerCanvas";
 export function App() {
   const scan = useScan();
   const instances = useInstances();
+  const issues = useIssues();
+  const bottomTab = useViewStore((s) => s.bottomTab);
+  const setBottomTab = useViewStore((s) => s.setBottomTab);
+  const openCount = issues.data?.filter(isOpen).length;
   const selectedId = useViewStore((s) => s.selectedId);
   const selected = useInstance(selectedId);
 
@@ -42,10 +48,59 @@ export function App() {
           <section aria-label="3D view" className="min-h-0">
             <ViewerCanvas />
           </section>
-          <section aria-label="Inventory" className="min-h-0 border-t border-line bg-panel">
-            {scan.data && instances.data && (
-              <InventoryTable instances={instances.data} classes={scan.data.classes} />
-            )}
+          <section
+            aria-label="Inventory and review"
+            className="flex min-h-0 flex-col border-t border-line bg-panel"
+          >
+            <div
+              role="tablist"
+              aria-label="Lists"
+              className="flex gap-1 border-b border-line px-2 pt-1"
+            >
+              {(
+                [
+                  ["inventory", "Inventory"],
+                  ["queue", `Review queue${openCount !== undefined ? ` (${openCount})` : ""}`],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="tab"
+                  id={`tab-${value}`}
+                  aria-selected={bottomTab === value}
+                  aria-controls={`panel-${value}`}
+                  onClick={() => setBottomTab(value)}
+                  className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${
+                    bottomTab === value
+                      ? "border-ink font-medium text-ink"
+                      : "border-transparent text-muted hover:text-ink"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div
+              role="tabpanel"
+              id={`panel-${bottomTab}`}
+              aria-labelledby={`tab-${bottomTab}`}
+              className="min-h-0 flex-1"
+            >
+              {bottomTab === "inventory" && scan.data && instances.data && (
+                <InventoryTable instances={instances.data} classes={scan.data.classes} />
+              )}
+              {bottomTab === "queue" && scan.data && instances.data && issues.data && (
+                <ReviewQueue
+                  issues={issues.data}
+                  instances={instances.data}
+                  classes={scan.data.classes}
+                />
+              )}
+              {issues.isError && bottomTab === "queue" && (
+                <p className="p-4 text-sm text-red-700">Could not load the review queue.</p>
+              )}
+            </div>
           </section>
         </div>
 

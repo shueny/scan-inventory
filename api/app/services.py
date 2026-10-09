@@ -170,6 +170,33 @@ def get_instance_detail(session: Session, scan_id: str, instance_id: int) -> sch
     )
 
 
+def _issue_events(
+    session: Session, scan_id: str, issue_id: str | None = None
+) -> dict[str, list[schemas.ReviewEventOut]]:
+    """Review events per issue id, oldest first (one query for all issues of a scan)."""
+    e = models.ReviewEvent
+    query = select(e).where(e.scan_id == scan_id, e.issue_id.is_not(None))
+    if issue_id is not None:
+        query = query.where(e.issue_id == issue_id)
+    grouped: dict[str, list[schemas.ReviewEventOut]] = {}
+    for event in session.scalars(query.order_by(e.created_at, e.id)):
+        grouped.setdefault(event.issue_id or "", []).append(
+            schemas.ReviewEventOut.model_validate(event)
+        )
+    return grouped
+
+
+def _issue_out(
+    issue: models.Issue, events: dict[str, list[schemas.ReviewEventOut]]
+) -> schemas.IssueOut:
+    return schemas.IssueOut.model_validate(
+        {
+            **{c.key: getattr(issue, c.key) for c in models.Issue.__table__.columns},
+            "history": events.get(issue.issue_id, []),
+        }
+    )
+
+
 def list_issues(
     session: Session,
     scan_id: str,
@@ -186,7 +213,8 @@ def list_issues(
     if issue_type is not None:
         query = query.where(models.Issue.type == issue_type)
     issues = sorted(session.scalars(query), key=lambda x: (SEVERITY_RANK[x.severity], x.sort_order))
-    return [schemas.IssueOut.model_validate(x) for x in issues]
+    events = _issue_events(session, scan_id)
+    return [_issue_out(x, events) for x in issues]
 
 
 # ---------------------------------------------------------------- writes
@@ -315,6 +343,6 @@ def resolve_issue(
         issue.status = new_status
 
     return schemas.ResolveResult(
-        issue=schemas.IssueOut.model_validate(issue),
+        issue=_issue_out(issue, _issue_events(session, scan_id, issue_id)),
         instances=[get_instance_detail(session, scan_id, i.instance_id) for i in instances],
     )

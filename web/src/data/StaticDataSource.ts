@@ -23,7 +23,7 @@ type Fetch = (url: string) => Promise<Response>;
 
 // Raw file shapes written by the pipeline (docs/data-schema.md).
 type RawInstance = Omit<Instance, "review_status" | "current_class_id">;
-type RawIssue = Omit<Issue, "status">;
+type RawIssue = Omit<Issue, "status" | "history">;
 
 interface Base {
   meta: ScanMeta;
@@ -80,8 +80,8 @@ export class StaticDataSource implements ScanDataSource {
   }
 
   async listIssues(scanId: string): Promise<Issue[]> {
-    const { state } = await this.current(scanId);
-    return sortBySeverity([...state.issues.values()]);
+    const { state, events } = await this.current(scanId);
+    return sortBySeverity([...state.issues.values()].map((i) => withHistory(i, events)));
   }
 
   async updateInstance(
@@ -110,7 +110,7 @@ export class StaticDataSource implements ScanDataSource {
     const issue = state.issues.get(issueId);
     if (!issue) throw new NotFoundError(`issue ${issueId}`); // not reached: checked by the plan
     return {
-      issue,
+      issue: withHistory(issue, events),
       instances: issue.instance_ids.map((id) => this.detail(scanId, state, events, id)),
     };
   }
@@ -266,5 +266,11 @@ function toIssue(raw: RawIssue): Issue {
     suggested_class_id: raw.suggested_class_id,
     candidate_tags: raw.candidate_tags,
     status: "open",
+    history: [],
   };
+}
+
+/** The issue with every event written while resolving it, oldest first (as the API). */
+function withHistory(issue: Issue, events: ReviewEvent[]): Issue {
+  return { ...issue, history: events.filter((e) => e.issue_id === issue.issue_id) };
 }

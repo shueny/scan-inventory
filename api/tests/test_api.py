@@ -205,6 +205,29 @@ def test_dismiss_issue_without_objects_records_a_scan_level_event(client: TestCl
     assert result.status_code == 200
     assert result.json()["issue"]["status"] == "dismissed"
     assert result.json()["instances"] == []
+    [event] = result.json()["issue"]["history"]  # no object, so only the issue holds it
+    assert event["instance_id"] is None
+    assert (event["action"], event["to_value"], event["note"]) == (
+        "close_issue",
+        "dismissed",
+        "removed",
+    )
+
+
+def test_issues_carry_their_history_who_when_what(client: TestClient) -> None:
+    resolve(client, "class_mismatch:1", {"action": "accept_suggestion", "note": "P&ID wins"})
+
+    issues = {i["issue_id"]: i for i in client.get(f"{BASE}/issues").json()}
+
+    assert issues["tag_split:P-9"]["history"] == []  # still open
+    history = issues["class_mismatch:1"]["history"]
+    assert [(e["action"], e["to_value"]) for e in history] == [
+        ("change_class", "12"),
+        ("set_review_status", "corrected"),
+        ("close_issue", "resolved"),
+    ]
+    assert {e["actor"] for e in history} == {"local user"}
+    assert all(e["created_at"] and e["note"] == "P&ID wins" for e in history)
 
 
 @pytest.mark.parametrize(

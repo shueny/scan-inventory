@@ -125,6 +125,10 @@ class IssueOut(BaseModel):
     suggested_class_id: int | None
     candidate_tags: list[CandidateTag]
     status: IssueStatus
+    # Every review event written while resolving this issue, oldest first: who closed it,
+    # when, and what changed. Empty while the issue is open. Issues without objects
+    # (tag_missing_in_scan) have their only history here.
+    history: list[ReviewEventOut]
 
 
 class Resolution(BaseModel):

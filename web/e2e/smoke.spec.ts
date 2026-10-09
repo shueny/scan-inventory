@@ -43,7 +43,7 @@ async function open(page: Page) {
   await expect(page.getByText(/fps · [1-9][\d,]* points/)).toBeVisible({ timeout: 30_000 });
 }
 
-const table = (page: Page) => page.getByRole("region", { name: "Inventory" });
+const table = (page: Page) => page.getByRole("region", { name: "Inventory and review" });
 
 test("loads the scan, draws points, and shows the filters and the inventory", async ({ page }) => {
   await open(page);
@@ -87,4 +87,35 @@ test("demo step 7 (one object): a review with a note survives a reload", async (
   await table(page).getByText("PSV-1").click();
   await expect(page.getByRole("article").getByText("“checked on site”")).toBeVisible();
   await expect(table(page).getByRole("row", { name: /PSV-1/ })).toContainText("Confirmed");
+});
+
+test("demo steps 6 and 7: resolve an issue from the queue, kept after a reload", async ({
+  page,
+}) => {
+  await open(page);
+  const lists = page.getByRole("region", { name: "Inventory and review" });
+
+  await lists.getByRole("tab", { name: "Review queue (5)" }).click();
+  // Sorted by severity: the class mismatch (high) comes first.
+  await expect(lists.getByRole("button", { name: /^class_mismatch:1/ })).toBeVisible();
+  const first = lists.getByRole("listitem").first();
+  await expect(first).toContainText("Class mismatch");
+
+  await lists.getByRole("button", { name: "class_mismatch:1" }).click();
+  // Selecting the issue selects its object: the detail panel shows it.
+  await expect(page.getByRole("heading", { name: "PSV-1" })).toBeVisible();
+  await lists.getByRole("textbox", { name: /Note/ }).fill("P&ID is right");
+  await lists
+    .getByRole("button", { name: /Accept: change class to Pressure safety valve/ })
+    .click();
+  await expect(lists.getByRole("tab", { name: "Open (4)" })).toBeVisible();
+
+  await page.reload();
+  await page.getByRole("tab", { name: "Review queue (4)" }).click();
+  await page.getByRole("tab", { name: "Resolved (1)" }).click();
+  await page.getByRole("button", { name: /class_mismatch:1/ }).click();
+  await expect(
+    page.getByText("Class: Piping components → Pressure safety valve").first(),
+  ).toBeVisible();
+  await expect(page.getByText("“P&ID is right”").first()).toBeVisible();
 });

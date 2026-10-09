@@ -304,6 +304,8 @@ export interface components {
             candidate_tags: components["schemas"]["CandidateTag"][];
             /** Detail */
             detail: string;
+            /** History */
+            history: components["schemas"]["ReviewEventOut"][];
             /** Instance Ids */
             instance_ids: number[];
             /** Issue Id */

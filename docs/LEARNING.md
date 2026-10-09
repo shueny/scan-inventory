@@ -231,3 +231,34 @@ Demo steps checked in the browser at 1440 × 900, in static mode and in api mode
 1. You confirm an object in the public demo, then reload the page. Where is the change stored, and how does the page rebuild the object's current status from it?
 2. A teammate adds a new review status to the API's `schemas.py` but forgets `make types`. Which test fails first, and what does the fix look like?
 3. Why does the contract suite run against a throwaway database instead of the `docker compose` database, and what would go wrong if two tests shared data without the reset?
+
+---
+
+## T6 · Review queue
+
+### What was built
+
+- **Issue history**: the API returns each issue with the review events written while resolving it (`IssueOut.history`); the static demo does the same from its browser event log. The contract suite checks both, including an issue with no objects.
+- **Queue rules** (`web/src/domain/issues.ts`): the actions each issue offers, the order (severity, then type), open counts per severity, and who/when closed an issue.
+- **Queue UI**: a "Review queue (n)" tab under the 3D view. Open issues are grouped under headings like "▲ High · Class mismatch (2)"; resolved ones show who, when and what changed. Selecting an issue selects its first object (3D fly-to and detail panel).
+- **Resolve flows** per type: accept the suggested class, change class, assign a tag from the ranked candidates or typed, or close with a type-specific reason, each with an optional note.
+- **Tests**: component tests on the real `StaticDataSource` with the fixture plant (every issue type can be closed), and a smoke test that resolves an issue in the browser and finds it under "Resolved" after a reload.
+
+Browser check on the real data (45 issues): static mode, assigning PT-108A to transmitter 2; api mode against a throwaway database, accepting the safety-valve suggestion for PSV-103A with a note (3 events in `review_event`, issue resolved, object class 12 after a reload).
+
+### Key concepts
+
+- **Data-driven UI rules**: which buttons an issue shows follows from its data ("has a class suggestion", "has exactly one object"), mirroring what the API accepts. The UI cannot offer an action that the server would refuse.
+- **One request, many answers**: the issue list reads every issue's events with one query and groups them in memory, instead of one query per issue (the "N+1" problem).
+- **Cache update from the answer**: resolving returns the closed issue and every changed object; the app writes those into the cache, so the queue, the table, the detail panel and the counts change together without reloading everything.
+- **Dismissed vs resolved**: "resolved" means the data was changed (class, tag); "dismissed" means the reviewer decided the data is right as it is. Both close the issue and both are in the history.
+
+### Why this way
+
+[ADR 0012](adr/0012-review-queue.md) (proposed): history on each issue, actions per type driven by the data, queue as a tab under the 3D view.
+
+### Quiz
+
+1. Why can the resolved tab not get the history of `tag_missing_in_scan:PCV-104A` from the object's history, and where does it come from instead?
+2. A `tag_split` issue has two objects. Why does the queue not offer "Change class" or "Assign tag" for it, and which part of the code decides that?
+3. After you accept a class suggestion, the table row, the detail panel and the open count all change at once. Which code makes that happen without reloading the page?

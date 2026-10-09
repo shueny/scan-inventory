@@ -201,13 +201,38 @@ export function contractSuite(name: string, fresh: () => Promise<ScanDataSource>
       });
     });
 
-    it("dismisses an issue that has no objects", async () => {
+    it("dismisses an issue that has no objects and keeps its history on the issue", async () => {
       const result = await source.resolveIssue(SCAN, "tag_missing_in_scan:PT-9", {
         action: "dismiss",
+        note: "removed from the plant",
       });
 
       expect(result.issue.status).toBe("dismissed");
       expect(result.instances).toEqual([]);
+      expect(result.issue.history).toHaveLength(1);
+      expect(result.issue.history[0]).toMatchObject({
+        instance_id: null,
+        issue_id: "tag_missing_in_scan:PT-9",
+        action: "close_issue",
+        from_value: "open",
+        to_value: "dismissed",
+        note: "removed from the plant",
+        actor: "local user",
+      });
+    });
+
+    it("lists each issue with who changed what and when, empty while open", async () => {
+      await source.resolveIssue(SCAN, "class_mismatch:1", { action: "accept_suggestion" });
+
+      const issues = await source.listIssues(SCAN);
+
+      const resolved = issues.find((i) => i.issue_id === "class_mismatch:1");
+      expect(resolved?.history.map((e) => [e.instance_id, e.action, e.to_value])).toEqual([
+        [1, "change_class", "12"],
+        [1, "set_review_status", "corrected"],
+        [1, "close_issue", "resolved"],
+      ]);
+      expect(issues.find((i) => i.issue_id === "tag_split:P-9")?.history).toEqual([]);
     });
 
     it("rejects resolutions that do not fit the issue and writes nothing", async () => {
