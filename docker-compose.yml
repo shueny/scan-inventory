@@ -1,5 +1,41 @@
-# Runtime services (PRD section 6). Filled in during task T4:
-#   api   FastAPI
-#   db    PostgreSQL 16
-#   tiles static server for data/potree (HTTP Range support)
-services: {}
+# Local full mode (PRD 6): API, database and a static server for the Potree tiles.
+# Needs a .env next to this file (copy .env.example) and data/ built by the pipeline.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DATA_DIR: /data
+      CORS_ORIGINS: '["http://localhost:5173"]'
+    volumes:
+      - ./data:/data:ro
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  tiles:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./infra/nginx/tiles.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./data/potree:/usr/share/nginx/html/potree:ro
+    ports:
+      - "127.0.0.1:8080:80"
+
+volumes:
+  pgdata:

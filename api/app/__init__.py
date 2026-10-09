@@ -1,1 +1,1 @@
-"""scan-inventory API. Implemented in task T4."""
+"""scan-inventory API: review decisions and history on top of the seeded inventory."""

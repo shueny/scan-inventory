@@ -129,3 +129,34 @@ See [ADR 0001](adr/0001-repo-layout-and-tooling.md). In short: each part (pipeli
 1. You click a valve in 3D. Trace what happens until the right panel shows its tag: which classes, store and hooks are involved, in order?
 2. Why can the background toggle hide Structural and Floor in both colour modes, and why does hiding them not make the page download less data?
 3. The demo should later run without a server. What in T3 already prepares for that, and what is still missing?
+
+---
+
+## T4 · API + DB
+
+### What was built
+
+- `api/app/`: FastAPI service. `models.py` (SQLAlchemy tables), `schemas.py` (Pydantic request/response models, which also define the OpenAPI schema), `services.py` (business rules and transactions), `routes.py` (the seven endpoints of PRD 8.2), `seed.py` (idempotent CLI), `main.py` (CORS, error-to-status mapping).
+- `api/migrations/`: Alembic migration `0001` that creates the five tables.
+- `docker-compose.yml`: `db` (Postgres 16), `api` (migrate → seed → serve on 127.0.0.1:8000), `tiles` (nginx serving `data/potree` with Range on 127.0.0.1:8080). Credentials in `.env`.
+- 45 API tests on a throwaway Postgres container, including two "failure writes nothing" tests and a test that the migration matches the models.
+
+### Key concepts
+
+- **Transaction**: a group of database changes that either all happen or none do. Resolving an issue changes the object, the issue and writes several history rows; if anything fails half-way, `rollback()` undoes all of it. The tests force a failure in the middle and check that nothing changed.
+- **Append-only history**: `review_event` rows are only ever inserted, never updated or deleted. The current state lives in `instance` and `issue`; the history explains how it got there (who, when, from what to what).
+- **Migration**: a versioned script that changes the database schema (`alembic upgrade head`). The schema is code, reviewed and repeatable, instead of hand-made tables.
+- **Idempotent seed**: running it twice has the same effect as running it once. On restart it sees the scan already exists and does nothing, so review changes are not overwritten.
+- **Foreign key as a rule**: `current_class_id` must point to an existing row in `scan_class`. Even a bug in the code cannot store a class that does not exist; the database refuses it.
+- **Status codes**: 404 = the thing does not exist, 422 = the request is understandable but not allowed (missing class, unknown class, closing with a wrong action), 409 = conflicts with the current state (issue already closed), 500 = our bug.
+- **testcontainers**: the tests start a real Postgres in Docker and throw it away afterwards. Tests run against the same database engine as production, not a fake.
+
+### Why this way
+
+[ADR 0008](adr/0008-api-data-model-and-tests.md): arrays + `scan_class` table, seed as a CLI run on container start, testcontainers for tests. Point data never touches the API or the database (PRD 6).
+
+### Quiz
+
+1. `POST /issues/class_mismatch:1/resolve` with `accept_suggestion`: which rows change and which rows are inserted? What happens to them if the last insert fails?
+2. Why does restarting the `api` container not reset the review decisions, and what does?
+3. Why does the API return 422 for `{"current_class_id": 99}` but 404 for `/instances/999`, and where in the code is each decided?

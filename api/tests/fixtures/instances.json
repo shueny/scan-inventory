@@ -1,0 +1,308 @@
+{
+ "summary": {
+  "scan_id": "test"
+ },
+ "instances": [
+  {
+   "scan_id": "test",
+   "instance_id": 1,
+   "class_id": 20,
+   "class_name": "x",
+   "is_background": false,
+   "point_count": 1001,
+   "centroid": [
+    1,
+    0,
+    37.0
+   ],
+   "bbox_min": [
+    0.9,
+    -0.1,
+    36.9
+   ],
+   "bbox_max": [
+    1.1,
+    0.1,
+    37.1
+   ],
+   "bbox_size": [
+    0.2,
+    0.2,
+    0.2
+   ],
+   "principal_axis": [
+    1,
+    0,
+    0
+   ],
+   "length_est_m": 0.5,
+   "diameter_est_m": 0.1,
+   "mean_color": [
+    1,
+    2,
+    3
+   ],
+   "has_tag": true,
+   "tag": "PSV-1",
+   "element": "safety valve",
+   "nominal_inch": 2.0,
+   "system": "S - 1",
+   "location": "NE",
+   "location_source": "pnid",
+   "all_tags": [
+    "PSV-1"
+   ],
+   "class_conflict": false
+  },
+  {
+   "scan_id": "test",
+   "instance_id": 2,
+   "class_id": 4,
+   "class_name": "x",
+   "is_background": false,
+   "point_count": 1002,
+   "centroid": [
+    2,
+    0,
+    37.0
+   ],
+   "bbox_min": [
+    1.9,
+    -0.1,
+    36.9
+   ],
+   "bbox_max": [
+    2.1,
+    0.1,
+    37.1
+   ],
+   "bbox_size": [
+    0.2,
+    0.2,
+    0.2
+   ],
+   "principal_axis": [
+    1,
+    0,
+    0
+   ],
+   "length_est_m": 0.5,
+   "diameter_est_m": 0.1,
+   "mean_color": [
+    1,
+    2,
+    3
+   ],
+   "has_tag": false,
+   "tag": null,
+   "element": null,
+   "nominal_inch": null,
+   "system": null,
+   "location": "NW",
+   "location_source": "nearest_tag",
+   "all_tags": [],
+   "class_conflict": false
+  },
+  {
+   "scan_id": "test",
+   "instance_id": 3,
+   "class_id": 8,
+   "class_name": "x",
+   "is_background": false,
+   "point_count": 1003,
+   "centroid": [
+    3,
+    0,
+    37.0
+   ],
+   "bbox_min": [
+    2.9,
+    -0.1,
+    36.9
+   ],
+   "bbox_max": [
+    3.1,
+    0.1,
+    37.1
+   ],
+   "bbox_size": [
+    0.2,
+    0.2,
+    0.2
+   ],
+   "principal_axis": [
+    1,
+    0,
+    0
+   ],
+   "length_est_m": 4.2,
+   "diameter_est_m": 0.6,
+   "mean_color": [
+    1,
+    2,
+    3
+   ],
+   "has_tag": false,
+   "tag": null,
+   "element": null,
+   "nominal_inch": null,
+   "system": null,
+   "location": "NW",
+   "location_source": "nearest_tag",
+   "all_tags": [],
+   "class_conflict": false
+  },
+  {
+   "scan_id": "test",
+   "instance_id": 4,
+   "class_id": 0,
+   "class_name": "x",
+   "is_background": true,
+   "point_count": 1004,
+   "centroid": [
+    4,
+    0,
+    37.0
+   ],
+   "bbox_min": [
+    3.9,
+    -0.1,
+    36.9
+   ],
+   "bbox_max": [
+    4.1,
+    0.1,
+    37.1
+   ],
+   "bbox_size": [
+    0.2,
+    0.2,
+    0.2
+   ],
+   "principal_axis": [
+    1,
+    0,
+    0
+   ],
+   "length_est_m": 0.5,
+   "diameter_est_m": 0.1,
+   "mean_color": [
+    1,
+    2,
+    3
+   ],
+   "has_tag": false,
+   "tag": null,
+   "element": null,
+   "nominal_inch": null,
+   "system": null,
+   "location": null,
+   "location_source": "background",
+   "all_tags": [],
+   "class_conflict": false
+  },
+  {
+   "scan_id": "test",
+   "instance_id": 5,
+   "class_id": 1,
+   "class_name": "x",
+   "is_background": false,
+   "point_count": 1005,
+   "centroid": [
+    5,
+    0,
+    37.0
+   ],
+   "bbox_min": [
+    4.9,
+    -0.1,
+    36.9
+   ],
+   "bbox_max": [
+    5.1,
+    0.1,
+    37.1
+   ],
+   "bbox_size": [
+    0.2,
+    0.2,
+    0.2
+   ],
+   "principal_axis": [
+    1,
+    0,
+    0
+   ],
+   "length_est_m": 0.5,
+   "diameter_est_m": 0.1,
+   "mean_color": [
+    1,
+    2,
+    3
+   ],
+   "has_tag": true,
+   "tag": "VG-5",
+   "element": "gate valve",
+   "nominal_inch": 2.0,
+   "system": "S - 2",
+   "location": "SW - SE",
+   "location_source": "pnid",
+   "all_tags": [
+    "VG-5"
+   ],
+   "class_conflict": false
+  },
+  {
+   "scan_id": "test",
+   "instance_id": 6,
+   "class_id": 13,
+   "class_name": "x",
+   "is_background": false,
+   "point_count": 1006,
+   "centroid": [
+    6,
+    0,
+    37.0
+   ],
+   "bbox_min": [
+    5.9,
+    -0.1,
+    36.9
+   ],
+   "bbox_max": [
+    6.1,
+    0.1,
+    37.1
+   ],
+   "bbox_size": [
+    0.2,
+    0.2,
+    0.2
+   ],
+   "principal_axis": [
+    1,
+    0,
+    0
+   ],
+   "length_est_m": 0.5,
+   "diameter_est_m": 0.1,
+   "mean_color": [
+    1,
+    2,
+    3
+   ],
+   "has_tag": true,
+   "tag": "P-9",
+   "element": "water pump",
+   "nominal_inch": 2.0,
+   "system": "S - 2",
+   "location": "NE",
+   "location_source": "pnid",
+   "all_tags": [
+    "P-9"
+   ],
+   "class_conflict": false
+  }
+ ],
+ "pnid_tags_missing_in_scan": []
+}

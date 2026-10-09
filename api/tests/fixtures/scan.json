@@ -1,0 +1,65 @@
+{
+ "scan_id": "test",
+ "name": "Test plant",
+ "source": "synthetic",
+ "licence": "CC BY 4.0",
+ "doi": "10.0/test",
+ "instance_count": 6,
+ "point_count": 123456,
+ "classes": [
+  {
+   "id": 0,
+   "name": "Structural",
+   "color": "#000000",
+   "is_background": true,
+   "instance_count": 0
+  },
+  {
+   "id": 1,
+   "name": "Manual wheel valve",
+   "color": "#01b207",
+   "is_background": false,
+   "instance_count": 0
+  },
+  {
+   "id": 4,
+   "name": "Transmitter",
+   "color": "#06c81c",
+   "is_background": false,
+   "instance_count": 0
+  },
+  {
+   "id": 8,
+   "name": "Pipe",
+   "color": "#0d9038",
+   "is_background": false,
+   "instance_count": 0
+  },
+  {
+   "id": 12,
+   "name": "Pressure safety valve",
+   "color": "#145854",
+   "is_background": false,
+   "instance_count": 0
+  },
+  {
+   "id": 13,
+   "name": "Motor",
+   "color": "#160a5b",
+   "is_background": false,
+   "instance_count": 0
+  },
+  {
+   "id": 20,
+   "name": "Piping components",
+   "color": "#21e88c",
+   "is_background": false,
+   "instance_count": 0
+  }
+ ],
+ "zones": [
+  "NW",
+  "NE",
+  "SW - SE"
+ ]
+}

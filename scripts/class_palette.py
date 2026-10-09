@@ -4,7 +4,7 @@ build_scan_meta.py writes these into data/scan.json; the viewer, the lists and t
 API (T4) all read them from there, so 3D and panels always show the same colour.
 
 Families share a hue range so the scene reads at a glance:
-  background  light greys (shown muted by default, ADR 0008)
+  background  light greys (shown muted by default, ADR 0007)
   piping      blues and teal-grey
   valves      reds, oranges, ambers, magentas
   instruments teal and cyan
