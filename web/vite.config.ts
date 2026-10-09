@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -10,7 +11,7 @@ import { defineConfig } from "vitest/config";
 // static demo build gets its JSON and tiles from elsewhere (T9). The browser tests set
 // SCAN_DATA_DIR to the small committed fixture plant instead (e2e/fixtures/data).
 const dataDir = process.env.SCAN_DATA_DIR
-  ? fileURLToPath(new URL(process.env.SCAN_DATA_DIR, `file://${process.cwd()}/`))
+  ? resolve(process.cwd(), process.env.SCAN_DATA_DIR)
   : fileURLToPath(new URL("../data", import.meta.url));
 
 function serveData(): Plugin {

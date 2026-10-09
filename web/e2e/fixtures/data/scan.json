@@ -5,7 +5,7 @@
  "licence": "CC BY 4.0",
  "doi": "10.0/test",
  "instance_count": 6,
- "point_count": 18000,
+ "point_count": 6021,
  "classes": [
   {
    "id": 0,

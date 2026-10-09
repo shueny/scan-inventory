@@ -4,7 +4,8 @@ import { defineConfig, devices } from "@playwright/test";
 // Runs the production build in static mode on the small committed fixture plant
 // (e2e/fixtures/data, built by scripts/build_e2e_fixtures.py), so it needs neither the
 // real scan nor the API, and runs the same way locally and in CI.
-const PORT = 4173;
+// Not 4173, the default `vite preview` port the owner may be using for the real data.
+const PORT = 4317;
 const env = [
   "SCAN_DATA_DIR=e2e/fixtures/data",
   "VITE_DATA_MODE=static",
@@ -16,7 +17,8 @@ export default defineConfig({
   testDir: "e2e",
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  // No retries: a flaky test must fail the gate, not turn green on the second try.
+  retries: 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: `http://localhost:${PORT}`,

@@ -9,7 +9,9 @@ command: `make gate`.
 
 1. `make check` (scripts, api, web unit tests, web contract tests against the real API).
 2. `uvx pre-commit run --all-files`.
-3. `pnpm --dir web test:e2e` (Playwright smoke on the fixture data in `web/e2e/fixtures/`).
+3. `pnpm --dir web test:e2e` (Playwright smoke on the fixture data in `web/e2e/fixtures/`). It runs
+   the app in **static mode** only; api mode is proven by the contract tests (same data source
+   behaviour) plus the browser check in step 5, which covers both modes.
 4. CI green on the PR (`.github/workflows/ci.yml` runs 1 to 3).
 5. A browser check of the task's demo steps on the real data, written in the PR.
 6. ADR for every decision, `docs/LEARNING.md` section with 3 quiz questions.
@@ -51,7 +53,7 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 |---|---|---|---|
 | harness | CI runs the gate on PRs; smoke test runs in CI | green CI on the harness PR | in progress |
 | T6 review queue | demo steps 6 and 7 work; every issue type from PRD 5.6 can be resolved | contract tests per resolution; e2e resolves an issue; browser check on real data | not started |
-| T7 dashboard + export | demo steps 8 and 9 work in both modes | unit tests for `domain/summary.ts`, `domain/exportCsv.ts`; e2e downloads the CSV | not started |
+| T7 dashboard + export | demo steps 8 and 9 work in both modes | unit tests for `domain/summary.ts`, `domain/exportCsv.ts`; e2e downloads the CSV (static); browser check in api mode | not started |
 | T8 polish + docs | fresh clone + README reproduces the demo; one Playwright smoke of the demo path; recorded performance numbers | README steps run from a clean clone; e2e covers the demo path | not started |
 | T9 demo deployment | demo mode UI (PRD 8.7); tiles on R2 under a versioned path; Pages deploy workflow; Range request returns 206; README links the demo | code + scripts merged; owner runs the account steps in `docs/DEPLOY.md` | not started |
 
@@ -62,3 +64,5 @@ None yet.
 ## Log
 
 - 2026-10-09: runbook created on branch `harness`; ADR 0011.
+- 2026-10-09: harness review round 1: 0 high, 2 medium (smoke passed with a broken point cloud;
+  errors only checked in one test), 8 low. Both mediums confirmed and fixed, 7 lows fixed, 1 noted.

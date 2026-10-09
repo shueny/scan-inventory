@@ -1,28 +1,47 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test as base, type Page } from "@playwright/test";
 
 // The demo path on the fixture plant (6 objects, 5 issues; e2e/fixtures/data).
 // Each test starts with empty browser storage, so review changes never leak between tests.
 
+/**
+ * Every test fails on any page error, console error, failed request or HTTP error, not
+ * only on what it asserts itself (self-review round 1 of the harness PR).
+ */
+const test = base.extend<{ problems: string[] }>({
+  problems: [
+    async ({ page }, use) => {
+      const problems: string[] = [];
+      page.on("pageerror", (e) => problems.push(`page error: ${e.message}`));
+      page.on("console", (m) => {
+        if (m.type() === "error") problems.push(`console error: ${m.text()}`);
+      });
+      page.on("requestfailed", (r) => problems.push(`request failed: ${r.url()}`));
+      page.on("response", (r) => {
+        if (r.status() >= 400) problems.push(`HTTP ${r.status()}: ${r.url()}`);
+      });
+      await use(problems);
+      expect(problems).toEqual([]);
+    },
+    { auto: true },
+  ],
+});
+
+/** Open the app and wait until points are actually drawn (the ?stats overlay counts them). */
 async function open(page: Page) {
-  const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  await page.goto("/");
+  await page.goto("/?stats");
   await expect(page.getByText("E2E fixture plant")).toBeVisible();
-  // The point cloud has loaded: the loading overlay is gone and no error is shown.
   await expect(page.getByText("Loading the scan…")).toBeHidden({ timeout: 30_000 });
   await expect(page.getByText(/could not be loaded/)).toBeHidden();
-  return errors;
+  await expect(page.getByText(/fps · [1-9][\d,]* points/)).toBeVisible({ timeout: 30_000 });
 }
 
 const table = (page: Page) => page.getByRole("region", { name: "Inventory" });
 
-test("loads the scan, the filters and the inventory without errors", async ({ page }) => {
-  const errors = await open(page);
+test("loads the scan, draws points, and shows the filters and the inventory", async ({ page }) => {
+  await open(page);
 
   await expect(table(page).getByText("5 of 5 objects")).toBeVisible();
   await expect(page.getByRole("checkbox", { name: /^NE/ })).toBeChecked();
-  expect(errors).toEqual([]);
 });
 
 test("demo step 3: unticking a zone hides its objects from the list", async ({ page }) => {

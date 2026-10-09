@@ -37,7 +37,6 @@ CONVERTER = Path(
     )
 )
 SCAN_ID = "nora"
-POINTS_PER_OBJECT = 3000
 SEED = 20261009
 
 
@@ -45,8 +44,8 @@ def renamed(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [{**row, "scan_id": SCAN_ID} for row in rows]
 
 
-def write_json(name: str, data: Any) -> None:
-    (OUT / name).write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8")
+def json_text(data: Any) -> str:
+    return json.dumps(data, indent=1) + "\n"
 
 
 def hex_rgb(color: str) -> tuple[int, int, int]:
@@ -54,13 +53,14 @@ def hex_rgb(color: str) -> tuple[int, int, int]:
 
 
 def write_las(instances: list[dict[str, Any]], path: Path) -> int:
-    """Points spread through each object's box, classification = class id,
-    point_source_id = instance id, like scripts/export_las.py writes the real scan."""
+    """Points spread through each object's box, as many as its point_count, with
+    classification = class id and point_source_id = instance id, like
+    scripts/export_las.py writes the real scan."""
     rng = np.random.default_rng(SEED)
     blocks = []
     for inst in instances:
         lo, hi = np.array(inst["bbox_min"]), np.array(inst["bbox_max"])
-        xyz = lo + rng.random((POINTS_PER_OBJECT, 3)) * (hi - lo)
+        xyz = lo + rng.random((inst["point_count"], 3)) * (hi - lo)
         blocks.append((xyz, inst["class_id"], inst["instance_id"]))
 
     xyz_all = np.concatenate([b[0] for b in blocks])
@@ -79,43 +79,58 @@ def write_las(instances: list[dict[str, Any]], path: Path) -> int:
     return len(xyz_all)
 
 
+def derive_json(source: Path = SOURCE) -> dict[str, Any]:
+    """The three JSON files of the fixture plant, derived from the API's test fixtures.
+    Pure, so a test can check that the committed files are not stale."""
+    scan = json.loads((source / "scan.json").read_text())
+    instances = json.loads((source / "instances.json").read_text())
+    issues = json.loads((source / "issues.json").read_text())
+    instances["instances"] = renamed(instances["instances"])
+    scan.update(
+        scan_id=SCAN_ID,
+        name="E2E fixture plant",
+        source="synthetic test data",
+        point_count=sum(i["point_count"] for i in instances["instances"]),
+    )
+    for c in scan["classes"]:
+        c["color"] = CLASS_COLORS.get(c["id"], UNKNOWN_COLOR)
+    issues["scan_id"] = SCAN_ID
+    return {"scan.json": scan, "instances.json": instances, "issues.json": issues}
+
+
 def main() -> None:
     if not CONVERTER.exists():
         sys.exit(f"PotreeConverter not found at {CONVERTER}; see scripts/potree/build_converter.sh")
+    files = derive_json()
 
-    scan = json.loads((SOURCE / "scan.json").read_text())
-    instances = json.loads((SOURCE / "instances.json").read_text())
-    issues = json.loads((SOURCE / "issues.json").read_text())
-
-    shutil.rmtree(OUT, ignore_errors=True)
-    OUT.mkdir(parents=True)
-    scan.update(scan_id=SCAN_ID, name="E2E fixture plant", source="synthetic test data")
-    for c in scan["classes"]:
-        c["color"] = CLASS_COLORS.get(c["id"], UNKNOWN_COLOR)
-    instances["instances"] = renamed(instances["instances"])
-    issues["scan_id"] = SCAN_ID
-
+    # Build everything in a temporary folder and swap it in only when it all worked,
+    # so a failed conversion leaves the committed fixtures untouched.
     with tempfile.TemporaryDirectory() as tmp:
-        las_path = Path(tmp) / "fixture.las"
-        scan["point_count"] = write_las(instances["instances"], las_path)
-        tiles = OUT / "potree" / SCAN_ID
+        staging = Path(tmp) / "data"
+        tiles = staging / "potree" / SCAN_ID
         tiles.mkdir(parents=True)
+        las_path = Path(tmp) / "fixture.las"
+        write_las(files["instances.json"]["instances"], las_path)
         subprocess.run(
             [str(CONVERTER), str(las_path), "-o", str(tiles), "--attributes", "rgb",
              "classification", "point source id"],
             check=True,
             stdout=subprocess.DEVNULL,
         )  # fmt: skip
-    (tiles / "log.txt").unlink(missing_ok=True)
-    # PotreeConverter leaves trailing spaces in metadata.json; the pre-commit hook rejects them.
-    meta = tiles / "metadata.json"
-    meta.write_text("\n".join(line.rstrip() for line in meta.read_text().splitlines()) + "\n")
+        (tiles / "log.txt").unlink(missing_ok=True)
+        # PotreeConverter leaves trailing spaces in metadata.json; pre-commit rejects them.
+        meta = tiles / "metadata.json"
+        meta.write_text("\n".join(line.rstrip() for line in meta.read_text().splitlines()) + "\n")
+        for name, data in files.items():
+            (staging / name).write_text(json_text(data), encoding="utf-8")
 
-    write_json("scan.json", scan)
-    write_json("instances.json", instances)
-    write_json("issues.json", issues)
+        shutil.rmtree(OUT, ignore_errors=True)
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(staging, OUT)
+
     size = sum(f.stat().st_size for f in OUT.rglob("*") if f.is_file())
-    print(f"Wrote {OUT.relative_to(REPO)}: {scan['point_count']:,} points, {size:,} bytes")
+    points = files["scan.json"]["point_count"]
+    print(f"Wrote {OUT.relative_to(REPO)}: {points:,} points, {size:,} bytes")
 
 
 if __name__ == "__main__":
