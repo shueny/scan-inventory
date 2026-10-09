@@ -2,3 +2,7 @@ pnpm-lock.yaml
 dist
 src/data/openapi.json
 src/data/api-schema.d.ts
+e2e/.dist
+e2e/fixtures/data
+playwright-report
+test-results

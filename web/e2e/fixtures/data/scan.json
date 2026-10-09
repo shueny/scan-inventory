@@ -1,0 +1,65 @@
+{
+ "scan_id": "nora",
+ "name": "E2E fixture plant",
+ "source": "synthetic test data",
+ "licence": "CC BY 4.0",
+ "doi": "10.0/test",
+ "instance_count": 6,
+ "point_count": 18000,
+ "classes": [
+  {
+   "id": 0,
+   "name": "Structural",
+   "color": "#c9ccd1",
+   "is_background": true,
+   "instance_count": 0
+  },
+  {
+   "id": 1,
+   "name": "Manual wheel valve",
+   "color": "#d1495b",
+   "is_background": false,
+   "instance_count": 0
+  },
+  {
+   "id": 4,
+   "name": "Transmitter",
+   "color": "#00a6d6",
+   "is_background": false,
+   "instance_count": 0
+  },
+  {
+   "id": 8,
+   "name": "Pipe",
+   "color": "#3b6ea8",
+   "is_background": false,
+   "instance_count": 0
+  },
+  {
+   "id": 12,
+   "name": "Pressure safety valve",
+   "color": "#ff2d6f",
+   "is_background": false,
+   "instance_count": 0
+  },
+  {
+   "id": 13,
+   "name": "Motor",
+   "color": "#5e4b8b",
+   "is_background": false,
+   "instance_count": 0
+  },
+  {
+   "id": 20,
+   "name": "Piping components",
+   "color": "#5b8f8a",
+   "is_background": false,
+   "instance_count": 0
+  }
+ ],
+ "zones": [
+  "NW",
+  "NE",
+  "SW - SE"
+ ]
+}

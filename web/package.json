@@ -10,6 +10,7 @@
     "typecheck": "tsc",
     "test": "vitest run",
     "test:contract": "vitest run --config vitest.contract.config.ts",
+    "test:e2e": "playwright test",
     "types": "openapi-typescript src/data/openapi.json --array-length -o src/data/api-schema.d.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/vite": "4.3.3",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",

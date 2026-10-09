@@ -1,0 +1,87 @@
+{
+ "scan_id": "nora",
+ "issue_count": 5,
+ "issues": [
+  {
+   "issue_id": "class_mismatch:1",
+   "type": "class_mismatch",
+   "severity": "high",
+   "instance_ids": [
+    1
+   ],
+   "tags": [
+    "PSV-1"
+   ],
+   "title": "class_mismatch:1",
+   "detail": "class_mismatch:1",
+   "suggested_action": "change_class",
+   "suggested_class_id": 12,
+   "candidate_tags": []
+  },
+  {
+   "issue_id": "tag_missing_in_scan:PT-9",
+   "type": "tag_missing_in_scan",
+   "severity": "medium",
+   "instance_ids": [],
+   "tags": [
+    "PT-9"
+   ],
+   "title": "tag_missing_in_scan:PT-9",
+   "detail": "tag_missing_in_scan:PT-9",
+   "suggested_action": null,
+   "suggested_class_id": null,
+   "candidate_tags": []
+  },
+  {
+   "issue_id": "untagged_equipment:2",
+   "type": "untagged_equipment",
+   "severity": "medium",
+   "instance_ids": [
+    2
+   ],
+   "tags": [],
+   "title": "untagged_equipment:2",
+   "detail": "untagged_equipment:2",
+   "suggested_action": "assign_tag",
+   "suggested_class_id": null,
+   "candidate_tags": [
+    {
+     "tag": "PT-9",
+     "system": "S - 1",
+     "distance_m": 0.4
+    }
+   ]
+  },
+  {
+   "issue_id": "tag_split:P-9",
+   "type": "tag_split",
+   "severity": "low",
+   "instance_ids": [
+    1,
+    6
+   ],
+   "tags": [
+    "P-9"
+   ],
+   "title": "tag_split:P-9",
+   "detail": "tag_split:P-9",
+   "suggested_action": null,
+   "suggested_class_id": null,
+   "candidate_tags": []
+  },
+  {
+   "issue_id": "estimate_unreliable:3",
+   "type": "estimate_unreliable",
+   "severity": "low",
+   "instance_ids": [
+    3
+   ],
+   "tags": [],
+   "title": "estimate_unreliable:3",
+   "detail": "estimate_unreliable:3",
+   "suggested_action": null,
+   "suggested_class_id": null,
+   "candidate_tags": []
+  }
+ ]
+}

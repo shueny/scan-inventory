@@ -7,8 +7,11 @@ import { defineConfig } from "vitest/config";
 
 // Serves the repo's data/ folder (JSON + Potree tiles) at /data in `vite dev` and
 // `vite preview`, with HTTP Range support. data/ is never copied into dist/: the
-// static demo build gets its JSON and tiles from elsewhere (T9).
-const dataDir = fileURLToPath(new URL("../data", import.meta.url));
+// static demo build gets its JSON and tiles from elsewhere (T9). The browser tests set
+// SCAN_DATA_DIR to the small committed fixture plant instead (e2e/fixtures/data).
+const dataDir = process.env.SCAN_DATA_DIR
+  ? fileURLToPath(new URL(process.env.SCAN_DATA_DIR, `file://${process.cwd()}/`))
+  : fileURLToPath(new URL("../data", import.meta.url));
 
 function serveData(): Plugin {
   const serve = sirv(dataDir, { dev: true, etag: true });
@@ -37,6 +40,6 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     css: false,
     // The API contract run needs Docker and is started with `pnpm test:contract`.
-    exclude: ["**/node_modules/**", "src/data/contract/apiSource.contract.test.ts"],
+    exclude: ["**/node_modules/**", "src/data/contract/apiSource.contract.test.ts", "e2e/**"],
   },
 });

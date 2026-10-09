@@ -28,6 +28,9 @@ htmlcov/
 # --- Node / web ---
 node_modules/
 web/dist/
+web/e2e/.dist/
+web/playwright-report/
+web/test-results/
 *.tsbuildinfo
 
 # --- Local launch config for the desktop app's preview (machine-specific paths) ---

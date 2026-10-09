@@ -4,7 +4,16 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", "src/data/api-schema.d.ts"] },
+  {
+    ignores: [
+      "dist",
+      "node_modules",
+      "src/data/api-schema.d.ts",
+      "e2e/.dist",
+      "playwright-report",
+      "test-results",
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.strict,
   reactHooks.configs.flat.recommended,

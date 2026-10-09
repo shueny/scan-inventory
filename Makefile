@@ -1,5 +1,5 @@
 # One command for the quality gate (PRD section 12): `make check`.
-.PHONY: install check check-scripts check-api check-web types
+.PHONY: install check check-scripts check-api check-web types e2e gate e2e-fixtures
 
 install:
 	cd scripts && uv sync
@@ -23,3 +23,15 @@ check-web:
 types:
 	cd api && uv run python -m app.openapi > ../web/src/data/openapi.json
 	pnpm --dir web types
+
+# Playwright smoke test on the committed fixture plant (web/e2e/fixtures/data).
+e2e:
+	pnpm --dir web test:e2e
+
+# The whole gate before a merge (docs/RUNBOOK.md); CI runs the same steps.
+gate: check e2e
+	uvx pre-commit run --all-files
+
+# Rebuild the fixture plant for the smoke test (needs PotreeConverter).
+e2e-fixtures:
+	uv run --project scripts python scripts/build_e2e_fixtures.py
