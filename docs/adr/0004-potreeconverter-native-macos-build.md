@@ -1,6 +1,6 @@
 # 0004 · PotreeConverter: native macOS build of 2.1.2 with a small patch
 
-Status: proposed (needs owner confirmation) · 2026-10-09 · Task T2
+Status: accepted by the owner · 2026-10-09 · Task T2
 
 ## Context
 
@@ -18,7 +18,7 @@ PotreeConverter 2.x turns the LAS file into Potree 2.0 tiles. Facts checked on 2
 2. **Linux container (Docker) built from source.** No patch, but needs Docker Desktop running (it did not start on this machine without user interaction), slower file access through the VM, and the newest tags do not build anyway, so it would also pin 2.1.2.
 3. **Use the unmerged upstream PR #686 branch.** Someone else's patch, base older than 2.1.2's successors, unreviewed.
 
-## Decision (proposed)
+## Decision
 
 Option 1. Pin `2.1.2`, keep the patch in `scripts/potree/potreeconverter-2.1.2-macos.patch`, build with `scripts/potree/build_converter.sh` into `.tools/` (gitignored). `scripts/build_potree.sh` calls the binary, or `$POTREE_CONVERTER` if set (e.g. a Linux binary in CI).
 

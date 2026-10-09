@@ -8,7 +8,7 @@
 |---|---|---|
 | (a) does `point_source_id` survive conversion? | **Yes.** | `scripts/verify_potree.py` decodes `octree.bin` directly. Per-instance point counts and all 263 (instance, class) pairs are identical to the LAS, for the 5 % sample and the full 151.9M points. |
 | (b) can the loader read classification and point_source_id at a picked point? | **Yes, both candidates.** | GPU pick returns `classification` and `point source id`. 6 picks checked against `instances.json`: class matches and the picked position lies inside that instance's box. ~1–2 ms per pick. |
-| (c) can it colour by classification? | **Only `@pnext/three-loader`.** | `potree-core` ignores the colour mode for Potree 2.0 data and has an sRGB bug that blows colours out to white. |
+| (c) can it colour by classification? | **Only `@pnext/three-loader`.** | `potree-core` ignores the colour mode for Potree 2.0 data. Its RGB is also wrong by default (sRGB bug), but that one can be fixed with `material.outputColorEncoding = 1`; class colouring cannot. |
 | (d) tile size and load time | see tables below | First screen needs ~0.3 MB for every variant. |
 | (e) recommended loader and picking | `@pnext/three-loader` 1.0.0 + GPU pick on `point source id` | ADR 0005 |
 
@@ -67,7 +67,7 @@ Load (local Vite dev server, resource timing in the browser):
 |---|---|---|
 | loads our tiles | yes, with `new Potree("v2")` | yes |
 | class colours | ![class colours](img/t2-pnext-class-colours.jpg) correct | ![bug](img/t2-potree-core-colour-bug.jpg) wrong: white/yellow in both modes |
-| RGB | ![rgb](img/t2-pnext-rgb.jpg) correct | wrong (same image) |
+| RGB | ![rgb](img/t2-pnext-rgb.jpg) correct | wrong by default (same image); correct with `material.outputColorEncoding = 1` |
 | pick | correct ids | correct ids |
 | three.js | `~0.160.0` | `>0.125` |
 
@@ -83,11 +83,13 @@ Same close-up of pressure meter 10 (1,854 points in the full scan; green, behind
 
 No object was lost by either method. Smallest objects keep 143 (random) vs 371 (voxel) points. Recommendation and trade-offs: ADR 0006.
 
-## Decisions for the owner
+## Decisions (accepted by the owner, 2026-10-09)
 
 1. Loader: `@pnext/three-loader` 1.0.0 (pins three.js 0.160) — ADR 0005.
 2. Picking: GPU pick on `point source id`, bounding-box test only as fallback — ADR 0005.
 3. Demo sampling: random 13 % — ADR 0006.
 4. PotreeConverter: native 2.1.2 + patch — ADR 0004.
 
-The throwaway viewer pages live outside the repo (scratchpad) and are deleted after the decision.
+The throwaway viewer pages lived outside the repo and were deleted after the decision.
+
+An independent verification of this report is in `T2-verification.md`.

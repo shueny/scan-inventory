@@ -1,6 +1,6 @@
 # 0006 · Sampling method for the public demo tiles
 
-Status: proposed (needs owner decision) · 2026-10-09 · Task T2
+Status: accepted by the owner · 2026-10-09 · Task T2
 
 ## Context
 
@@ -20,13 +20,13 @@ The public demo needs about 20M of the 151.9M points (PRD 8.1 P3), deterministic
 
 Screenshots of the same close-up (pressure meter, instance 10) are in `docs/spikes/T2-report.md`. At the default point budget they look nearly the same; voxel edges are slightly more even.
 
-## Decision (proposed)
+## Decision
 
 Random sampling, `--sample 0.13`.
 
 - 20x faster, simpler to explain ("each point kept with probability 0.13"), and every object keeps the same share, so point counts in the demo stay proportional to the full scan.
 - 143 points on the smallest object is enough to see and pick it.
-- Voxel's advantage (more points on small objects) is real but not needed at this size. Its current implementation is also slow and memory-heavy (it remembers ~18M cube keys); it would need work to meet the 2 GB pipeline limit with confidence.
+- Voxel's advantage (more points on small objects) is real but not needed at this size. Its current implementation is also slow and memory-heavy (it remembers ~18M cube keys); its peak memory footprint was measured at 1.62 GB, 81 % of the 2 GB pipeline limit (`docs/spikes/T2-verification.md`, check 4c).
 
 ## Consequences
 

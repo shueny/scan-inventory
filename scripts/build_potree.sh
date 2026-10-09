@@ -24,11 +24,27 @@ converter=${POTREE_CONVERTER:-$repo_root/.tools/PotreeConverter/build/PotreeConv
   exit 1
 }
 
-rm -rf "$output"
-mkdir -p "$output"
+# The output folder is replaced, so only allow a direct subfolder of data/potree/,
+# and only replace an existing folder if it is earlier Potree output.
+tiles_root=$repo_root/data/potree
+mkdir -p "$tiles_root"
+parent=$(cd "$(dirname "$output")" 2>/dev/null && pwd) || parent=""
+name=$(basename "$output")
+if [[ $parent != "$tiles_root" || -z $name || $name == "." || $name == ".." ]]; then
+  echo "output must be a folder directly inside data/potree/, got: $output" >&2
+  exit 1
+fi
+target=$tiles_root/$name
+if [[ -e $target && ! -f $target/metadata.json ]]; then
+  echo "refusing to replace $target: it is not Potree output (no metadata.json)" >&2
+  exit 1
+fi
+
+rm -rf "$target"
+mkdir -p "$target"
 # Only the attributes the app uses keeps octree.bin small.
 # "point source id" holds the instance id (see scripts/export_las.py).
-"$converter" "$input" -o "$output" --attributes rgb classification "point source id"
+"$converter" "$input" -o "$target" --attributes rgb classification "point source id"
 
-echo "Wrote $output:"
-ls -la "$output"
+echo "Wrote $target:"
+ls -la "$target"

@@ -1,6 +1,6 @@
 # 0005 · Potree 2.0 loader and picking method
 
-Status: proposed (needs owner decision) · 2026-10-09 · Task T2
+Status: accepted by the owner · 2026-10-09 · Task T2
 
 ## Context
 
@@ -12,7 +12,7 @@ The viewer (T3) needs a Three.js loader for Potree 2.0 tiles that can stream wit
 |---|---|---|
 | Loads our Potree 2.0 tiles | yes (`new Potree("v2")`) | yes |
 | Colour by classification | **works** | **does not work**: for Potree 2.0 data the shader always uses the RGB attribute and ignores `pointColorType` |
-| RGB colour | correct | **wrong**: the 2.0 path has an sRGB conversion with swapped `mix()` arguments, colours blow out to white |
+| RGB colour | correct | wrong with the default material (an sRGB conversion with swapped `mix()` arguments blows colours out to white); correct after `material.outputColorEncoding = 1` (SRGB, enum not exported) |
 | Picking returns `classification` and `point source id` | yes, exact values, ~1–2 ms | yes, exact values, ~2 ms |
 | Point budget | yes | yes |
 | three.js | peer `~0.160.0` (strict) | peer `>0.125.0` |
@@ -23,9 +23,9 @@ Picking methods:
 1. **GPU pick from the loader** (`Potree.pick`) reading `point source id` at the clicked point. Exact: the instance of the point under the cursor.
 2. **Ray test against the 263 bounding boxes** from the inventory, smallest box wins. No dependence on the loader, but wrong where boxes overlap (a valve inside a pipe's box, anything inside the Structural box).
 
-## Decision (proposed)
+## Decision
 
-- Loader: `@pnext/three-loader` 1.0.0 with `three@0.160.x`.
+- Loader: `@pnext/three-loader` 1.0.0 with `three@0.160.x`. The deciding reason is colour by classification, the default view (PRD 8.3): `potree-core` cannot do it for Potree 2.0 data even with the RGB workaround, because its shader takes the RGB attribute before any colour-mode branch (independent verification, `docs/spikes/T2-verification.md`, check 9b).
 - Picking: option 1, GPU pick reading `point source id`; fall back to the bounding-box test only if the pick misses (no point under the cursor).
 
 ## Consequences
