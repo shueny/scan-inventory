@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useResolveIssue } from "../data/hooks";
 import type { ClassInfo, Instance, Issue, Resolution } from "../data/types";
 import { closingEvent, DISMISS_LABEL, issueActions, TYPE_LABEL } from "../domain/issues";
@@ -24,6 +24,8 @@ export function IssuePanel({
   classes: ClassInfo[];
 }) {
   const select = useViewStore((s) => s.select);
+  // Open when this panel appeared: if it closes while shown, the reviewer just resolved it.
+  const [openedHere] = useState(issue.status === "open");
   const byId = new Map(instances.map((i) => [i.instance_id, i]));
   const className = (id: number | null) => classes.find((c) => c.id === id)?.name ?? String(id);
 
@@ -67,7 +69,7 @@ export function IssuePanel({
           currentClassId={byId.get(issue.instance_ids[0] ?? -1)?.current_class_id ?? null}
         />
       ) : (
-        <Closed issue={issue} classes={classes} />
+        <Closed issue={issue} classes={classes} focusHeading={openedHere} />
       )}
     </article>
   );
@@ -89,9 +91,10 @@ function Resolve({
   const [note, setNote] = useState("");
   const firstCandidate = issue.candidate_tags[0]?.tag ?? "";
   const [tag, setTag] = useState(firstCandidate);
-  // Start on the object's own class (review round 1: starting on the first class in the
-  // list, "Structural", let one click turn any object into the background).
-  const [classId, setClassId] = useState<number | null>(currentClassId);
+  // Only the reviewer's pick is local state; otherwise the dropdown shows the object's
+  // class as it is now, also after a change made elsewhere (review rounds 1 and 2).
+  const [picked, setPicked] = useState<number | null>(null);
+  const classId = picked ?? currentClassId;
   const actions = issueActions(issue);
   const busy = resolve.isPending;
 
@@ -170,7 +173,7 @@ function Resolve({
           <select
             id="issue-class"
             value={classId ?? ""}
-            onChange={(e) => setClassId(Number(e.target.value))}
+            onChange={(e) => setPicked(Number(e.target.value))}
             className="min-w-0 flex-1 rounded-md border border-line px-2 py-1"
           >
             {classId === null && <option value="">Choose a class</option>}
@@ -220,12 +223,25 @@ function Resolve({
   );
 }
 
-function Closed({ issue, classes }: { issue: Issue; classes: ClassInfo[] }) {
+function Closed({
+  issue,
+  classes,
+  focusHeading,
+}: {
+  issue: Issue;
+  classes: ClassInfo[];
+  /** Just resolved here: move focus to the result, since the clicked button is gone. */
+  focusHeading: boolean;
+}) {
   const closing = closingEvent(issue);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (focusHeading) headingRef.current?.focus();
+  }, [focusHeading]);
   const changes = issue.history.filter((e) => e.action !== "close_issue");
   return (
     <section aria-labelledby="closed-heading" className="flex flex-col gap-2">
-      <h3 id="closed-heading" className={heading}>
+      <h3 id="closed-heading" ref={headingRef} tabIndex={-1} className={heading}>
         {issue.status === "dismissed" ? "Dismissed" : "Resolved"}
       </h3>
       {closing && (

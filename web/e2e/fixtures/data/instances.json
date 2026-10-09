@@ -246,7 +246,7 @@
    "nominal_inch": 2.0,
    "system": "S - 2",
    "location": "SW - SE",
-   "location_source": "pnid",
+   "location_source": "tagged_nearest_tag",
    "all_tags": [
     "VG-5"
    ],

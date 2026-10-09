@@ -77,7 +77,8 @@ export function Tabs<T extends string>({
             role="tab"
             id={tabId(group, item.value)}
             aria-selected={active}
-            aria-controls={panelId(group, item.value)}
+            // Only the selected panel is rendered, so only its tab points at it.
+            aria-controls={active ? panelId(group, item.value) : undefined}
             tabIndex={active ? 0 : -1}
             onClick={() => onSelect(item.value)}
             onKeyDown={(e) => move(e, i)}

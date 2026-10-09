@@ -85,3 +85,7 @@ None yet.
   Structural), 4 medium (no zone_borrowed in the fixtures; tag/issue linking; ARIA tabs; api mode
   only via contract tests), 5 low. High and 2 mediums fixed with tests; tag linking proposed to
   the owner; api-mode risk accepted in ADR 0012; 2 lows fixed, 3 noted.
+- 2026-10-09: T6 review round 2: CI red on 47025b3 from a Docker Hub pull rate limit (infra;
+  CI now pre-pulls with retries and skips the testcontainers clean-up image), 0 high, 2 medium
+  (both class pickers kept a stale class after a change in the other panel; one click undid
+  it), 4 low. All fixed, mediums with tests that failed first.

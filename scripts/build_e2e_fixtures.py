@@ -3,7 +3,7 @@ Build the browser test fixtures (web/e2e/fixtures/data/)
 --------------------------------------------------------
 The real scan is gitignored, so the Playwright smoke test (and CI) runs on a tiny
 synthetic plant instead: the API's test objects (api/tests/fixtures/, 6 objects and
-5 issues), renamed to scan "nora" so the app loads them unchanged, with real class
+6 issues), renamed to scan "nora" so the app loads them unchanged, with real class
 colours and a few thousand generated points inside each object's box, converted to
 Potree tiles with PotreeConverter.
 

@@ -5,9 +5,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DataSourceProvider } from "../data/DataSourceProvider";
 import { memoryEventStore } from "../data/eventStore";
-import { useInstances, useIssues, useScan } from "../data/hooks";
+import { useInstance, useInstances, useIssues, useScan } from "../data/hooks";
 import { StaticDataSource } from "../data/StaticDataSource";
 import { useViewStore } from "../state/viewStore";
+import { InstanceDetail } from "./InstanceDetail";
 import { ReviewQueue } from "./ReviewQueue";
 
 // The real StaticDataSource on the committed fixture plant (scan "nora", 6 objects,
@@ -16,17 +17,25 @@ const FIXTURES = join(process.cwd(), "e2e", "fixtures", "data");
 const fetchFixture = (url: string) =>
   Promise.resolve(new Response(readFileSync(join(FIXTURES, url.replace(/^\/data\//, "")), "utf8")));
 
-function Queue() {
+/** The queue and the selected object's detail panel, side by side as in the app. */
+function Queue({ withDetail = false }: { withDetail?: boolean }) {
   const scan = useScan();
   const instances = useInstances();
   const issues = useIssues();
+  const selectedId = useViewStore((s) => s.selectedId);
+  const selected = useInstance(selectedId);
   if (!scan.data || !instances.data || !issues.data) return <p>loading</p>;
   return (
-    <ReviewQueue issues={issues.data} instances={instances.data} classes={scan.data.classes} />
+    <>
+      <ReviewQueue issues={issues.data} instances={instances.data} classes={scan.data.classes} />
+      {withDetail && selected.data && (
+        <InstanceDetail instance={selected.data} classes={scan.data.classes} />
+      )}
+    </>
   );
 }
 
-function renderQueue() {
+function renderQueue(options: { withDetail?: boolean } = {}) {
   const source = new StaticDataSource("/data", {
     fetchFn: fetchFixture,
     storeFor: () => memoryEventStore(),
@@ -35,7 +44,7 @@ function renderQueue() {
   render(
     <QueryClientProvider client={client}>
       <DataSourceProvider source={source}>
-        <Queue />
+        <Queue withDetail={options.withDetail} />
       </DataSourceProvider>
     </QueryClientProvider>,
   );
@@ -90,7 +99,8 @@ describe("ReviewQueue", () => {
     );
 
     expect(await screen.findByRole("tab", { name: "Open (5)" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Resolved" })).toBeInTheDocument();
+    // The clicked button is gone; focus moves to the result for keyboard users.
+    expect(screen.getByRole("heading", { name: "Resolved" })).toHaveFocus();
     expect(screen.getAllByText("#1")).toHaveLength(2); // class change and status change
     expect(
       screen.getByText("Class: Piping components → Pressure safety valve"),
@@ -174,5 +184,37 @@ describe("ReviewQueue", () => {
 
     expect(await screen.findByText("Tag assigned: PT-77X")).toBeInTheDocument();
     expect((await source.getInstance("nora", 2)).all_tags).toEqual(["PT-77X"]);
+  });
+
+  it("both class pickers follow a class change made in the other panel", async () => {
+    const user = userEvent.setup();
+    renderQueue({ withDetail: true });
+    await user.click(await screen.findByRole("button", { name: "untagged_equipment:2" }));
+    const objectPicker = screen.getByRole("combobox", { name: "New class" });
+    const issuePicker = screen.getByRole("combobox", { name: "Class for the object" });
+    expect(objectPicker).toHaveValue("4");
+    expect(issuePicker).toHaveValue("4");
+
+    // Change the class in the object's own panel: the issue panel must follow.
+    const objectPanel = screen.getByRole("region", { name: "Review" });
+    const issuePanel = screen.getByRole("region", { name: "Resolve" });
+    await user.selectOptions(objectPicker, "Pipe");
+    await user.click(within(objectPanel).getByRole("button", { name: "Change class" }));
+    await screen.findByText("Class: Transmitter → Pipe");
+    expect(within(issuePanel).getByRole("combobox")).toHaveValue("8");
+    expect(within(issuePanel).getByRole("button", { name: "Change class" })).toBeDisabled();
+  });
+
+  it("the object panel follows a class accepted in the queue", async () => {
+    const user = userEvent.setup();
+    renderQueue({ withDetail: true });
+    await user.click(await screen.findByRole("button", { name: "class_mismatch:1" }));
+    expect(screen.getByRole("combobox", { name: "New class" })).toHaveValue("20");
+
+    await user.click(screen.getByRole("button", { name: /Accept: change class/ }));
+
+    await screen.findByRole("heading", { name: "Resolved" });
+    expect(screen.getByRole("combobox", { name: "New class" })).toHaveValue("12");
+    expect(screen.getByRole("button", { name: "Change class" })).toBeDisabled();
   });
 });
