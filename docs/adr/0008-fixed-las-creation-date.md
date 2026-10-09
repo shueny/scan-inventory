@@ -1,6 +1,6 @@
 # 0008 · Fixed creation date in the LAS header
 
-Status: proposed, waiting for the owner · 2026-10-09 · T2 follow-up (verification finding D3)
+Status: accepted by the owner · 2026-10-09 · T2 follow-up (verification finding D3)
 
 ## Context
 
@@ -14,7 +14,7 @@ Status: proposed, waiting for the owner · 2026-10-09 · T2 follow-up (verificat
 | B · PLY modification time | date of `pointcloud/nora.ply` mtime (2025-05-19) | yes | no: a re-download or `cp` without `-p` changes mtime | "when the source data was produced" |
 | C · keep today's date | today | no | no | true run date; T9 would have to hash the points, not the file |
 
-## Decision (recommended, not yet confirmed)
+## Decision
 
 A, a constant. Simplest to explain and the only option where the output depends on nothing but the input content and the code. The LAS spec calls the field "file creation day"; nothing in our pipeline (PotreeConverter, verify_potree.py, the viewer) reads it.
 

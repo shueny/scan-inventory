@@ -159,7 +159,7 @@ Not fixed: the voxel key overflow below ~4.5 µm (D9, unreachable) and the repor
 
 - Temp file + rename instead of "refuse to overwrite": reruns stay convenient, and a failure still cannot destroy the previous output.
 - Ids are now checked on every point, not only on sampled points. A bad id in the source is a data error even if sampling would have dropped it.
-- Constant date: see ADR 0008 (waiting for the owner).
+- Constant date: see ADR 0008 (accepted).
 
 ### Quiz
 
