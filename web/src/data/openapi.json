@@ -1,0 +1,1419 @@
+{
+  "components": {
+    "schemas": {
+      "CandidateTag": {
+        "properties": {
+          "distance_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance M"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "tag": {
+            "title": "Tag",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tag",
+          "system",
+          "distance_m"
+        ],
+        "title": "CandidateTag",
+        "type": "object"
+      },
+      "ClassInfo": {
+        "properties": {
+          "color": {
+            "title": "Color",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "instance_count": {
+            "title": "Instance Count",
+            "type": "integer"
+          },
+          "is_background": {
+            "title": "Is Background",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "color",
+          "is_background",
+          "instance_count"
+        ],
+        "title": "ClassInfo",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "properties": {
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "InstanceChange": {
+        "additionalProperties": false,
+        "description": "PATCH body. At least one of review_status and current_class_id.",
+        "properties": {
+          "current_class_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Class Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "review_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "unreviewed",
+                  "confirmed",
+                  "corrected",
+                  "rejected"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Status"
+          }
+        },
+        "title": "InstanceChange",
+        "type": "object"
+      },
+      "InstanceDetail": {
+        "properties": {
+          "all_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "All Tags",
+            "type": "array"
+          },
+          "bbox_max": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Bbox Max",
+            "type": "array"
+          },
+          "bbox_min": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Bbox Min",
+            "type": "array"
+          },
+          "bbox_size": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Bbox Size",
+            "type": "array"
+          },
+          "centroid": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Centroid",
+            "type": "array"
+          },
+          "class_id": {
+            "title": "Class Id",
+            "type": "integer"
+          },
+          "class_name": {
+            "title": "Class Name",
+            "type": "string"
+          },
+          "current_class_id": {
+            "title": "Current Class Id",
+            "type": "integer"
+          },
+          "diameter_est_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diameter Est M"
+          },
+          "element": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Element"
+          },
+          "has_tag": {
+            "title": "Has Tag",
+            "type": "boolean"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewEventOut"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "instance_id": {
+            "title": "Instance Id",
+            "type": "integer"
+          },
+          "is_background": {
+            "title": "Is Background",
+            "type": "boolean"
+          },
+          "length_est_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Est M"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "location_source": {
+            "enum": [
+              "pnid",
+              "tagged_nearest_tag",
+              "nearest_tag",
+              "background"
+            ],
+            "title": "Location Source",
+            "type": "string"
+          },
+          "nominal_inch": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nominal Inch"
+          },
+          "point_count": {
+            "title": "Point Count",
+            "type": "integer"
+          },
+          "review_status": {
+            "enum": [
+              "unreviewed",
+              "confirmed",
+              "corrected",
+              "rejected"
+            ],
+            "title": "Review Status",
+            "type": "string"
+          },
+          "scan_id": {
+            "title": "Scan Id",
+            "type": "string"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "tag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag"
+          }
+        },
+        "required": [
+          "scan_id",
+          "instance_id",
+          "class_id",
+          "class_name",
+          "is_background",
+          "point_count",
+          "centroid",
+          "bbox_min",
+          "bbox_max",
+          "bbox_size",
+          "length_est_m",
+          "diameter_est_m",
+          "has_tag",
+          "tag",
+          "all_tags",
+          "element",
+          "nominal_inch",
+          "system",
+          "location",
+          "location_source",
+          "review_status",
+          "current_class_id",
+          "history"
+        ],
+        "title": "InstanceDetail",
+        "type": "object"
+      },
+      "InstanceOut": {
+        "properties": {
+          "all_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "All Tags",
+            "type": "array"
+          },
+          "bbox_max": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Bbox Max",
+            "type": "array"
+          },
+          "bbox_min": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Bbox Min",
+            "type": "array"
+          },
+          "bbox_size": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Bbox Size",
+            "type": "array"
+          },
+          "centroid": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Centroid",
+            "type": "array"
+          },
+          "class_id": {
+            "title": "Class Id",
+            "type": "integer"
+          },
+          "class_name": {
+            "title": "Class Name",
+            "type": "string"
+          },
+          "current_class_id": {
+            "title": "Current Class Id",
+            "type": "integer"
+          },
+          "diameter_est_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diameter Est M"
+          },
+          "element": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Element"
+          },
+          "has_tag": {
+            "title": "Has Tag",
+            "type": "boolean"
+          },
+          "instance_id": {
+            "title": "Instance Id",
+            "type": "integer"
+          },
+          "is_background": {
+            "title": "Is Background",
+            "type": "boolean"
+          },
+          "length_est_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Length Est M"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "location_source": {
+            "enum": [
+              "pnid",
+              "tagged_nearest_tag",
+              "nearest_tag",
+              "background"
+            ],
+            "title": "Location Source",
+            "type": "string"
+          },
+          "nominal_inch": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nominal Inch"
+          },
+          "point_count": {
+            "title": "Point Count",
+            "type": "integer"
+          },
+          "review_status": {
+            "enum": [
+              "unreviewed",
+              "confirmed",
+              "corrected",
+              "rejected"
+            ],
+            "title": "Review Status",
+            "type": "string"
+          },
+          "scan_id": {
+            "title": "Scan Id",
+            "type": "string"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "tag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag"
+          }
+        },
+        "required": [
+          "scan_id",
+          "instance_id",
+          "class_id",
+          "class_name",
+          "is_background",
+          "point_count",
+          "centroid",
+          "bbox_min",
+          "bbox_max",
+          "bbox_size",
+          "length_est_m",
+          "diameter_est_m",
+          "has_tag",
+          "tag",
+          "all_tags",
+          "element",
+          "nominal_inch",
+          "system",
+          "location",
+          "location_source",
+          "review_status",
+          "current_class_id"
+        ],
+        "title": "InstanceOut",
+        "type": "object"
+      },
+      "IssueOut": {
+        "properties": {
+          "candidate_tags": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateTag"
+            },
+            "title": "Candidate Tags",
+            "type": "array"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "instance_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Instance Ids",
+            "type": "array"
+          },
+          "issue_id": {
+            "title": "Issue Id",
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "resolved",
+              "dismissed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "suggested_action": {
+            "anyOf": [
+              {
+                "enum": [
+                  "change_class",
+                  "assign_tag"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Action"
+          },
+          "suggested_class_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Class Id"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "class_mismatch",
+              "tag_missing_in_scan",
+              "untagged_equipment",
+              "tag_split",
+              "estimate_unreliable",
+              "zone_borrowed"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issue_id",
+          "type",
+          "severity",
+          "instance_ids",
+          "tags",
+          "title",
+          "detail",
+          "suggested_action",
+          "suggested_class_id",
+          "candidate_tags",
+          "status"
+        ],
+        "title": "IssueOut",
+        "type": "object"
+      },
+      "Resolution": {
+        "additionalProperties": false,
+        "description": "POST .../resolve body.",
+        "properties": {
+          "action": {
+            "enum": [
+              "accept_suggestion",
+              "change_class",
+              "assign_tag",
+              "dismiss"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "class_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "tag": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "Resolution",
+        "type": "object"
+      },
+      "ResolveResult": {
+        "properties": {
+          "instances": {
+            "items": {
+              "$ref": "#/components/schemas/InstanceDetail"
+            },
+            "title": "Instances",
+            "type": "array"
+          },
+          "issue": {
+            "$ref": "#/components/schemas/IssueOut"
+          }
+        },
+        "required": [
+          "issue",
+          "instances"
+        ],
+        "title": "ResolveResult",
+        "type": "object"
+      },
+      "ReviewEventOut": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor": {
+            "title": "Actor",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "from_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Value"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "instance_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instance Id"
+          },
+          "issue_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issue Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "scan_id": {
+            "title": "Scan Id",
+            "type": "string"
+          },
+          "to_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Value"
+          }
+        },
+        "required": [
+          "id",
+          "scan_id",
+          "instance_id",
+          "issue_id",
+          "action",
+          "from_value",
+          "to_value",
+          "note",
+          "actor",
+          "created_at"
+        ],
+        "title": "ReviewEventOut",
+        "type": "object"
+      },
+      "ScanMeta": {
+        "properties": {
+          "classes": {
+            "items": {
+              "$ref": "#/components/schemas/ClassInfo"
+            },
+            "title": "Classes",
+            "type": "array"
+          },
+          "doi": {
+            "title": "Doi",
+            "type": "string"
+          },
+          "instance_count": {
+            "title": "Instance Count",
+            "type": "integer"
+          },
+          "licence": {
+            "title": "Licence",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "point_count": {
+            "title": "Point Count",
+            "type": "integer"
+          },
+          "scan_id": {
+            "title": "Scan Id",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "zones": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Zones",
+            "type": "array"
+          }
+        },
+        "required": [
+          "scan_id",
+          "name",
+          "source",
+          "licence",
+          "doi",
+          "instance_count",
+          "point_count",
+          "classes",
+          "zones"
+        ],
+        "title": "ScanMeta",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Review decisions and history for the scanned object inventory.",
+    "title": "scan-inventory API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/api/scans/{scan_id}": {
+      "get": {
+        "operationId": "get_scan_api_scans__scan_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scan_id",
+            "required": true,
+            "schema": {
+              "title": "Scan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanMeta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Scan"
+      }
+    },
+    "/api/scans/{scan_id}/instances": {
+      "get": {
+        "operationId": "list_instances_api_scans__scan_id__instances_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scan_id",
+            "required": true,
+            "schema": {
+              "title": "Scan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "zone",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Zone"
+            }
+          },
+          {
+            "in": "query",
+            "name": "system",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "System"
+            }
+          },
+          {
+            "in": "query",
+            "name": "class_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Class Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "review_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "unreviewed",
+                    "confirmed",
+                    "corrected",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Review Status"
+            }
+          },
+          {
+            "description": "tag search",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "tag search",
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_background",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Background",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InstanceOut"
+                  },
+                  "title": "Response List Instances Api Scans  Scan Id  Instances Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Instances"
+      }
+    },
+    "/api/scans/{scan_id}/instances/{instance_id}": {
+      "get": {
+        "operationId": "get_instance_api_scans__scan_id__instances__instance_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scan_id",
+            "required": true,
+            "schema": {
+              "title": "Scan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "instance_id",
+            "required": true,
+            "schema": {
+              "title": "Instance Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Instance"
+      },
+      "patch": {
+        "operationId": "update_instance_api_scans__scan_id__instances__instance_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scan_id",
+            "required": true,
+            "schema": {
+              "title": "Scan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "instance_id",
+            "required": true,
+            "schema": {
+              "title": "Instance Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstanceChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Instance"
+      }
+    },
+    "/api/scans/{scan_id}/issues": {
+      "get": {
+        "operationId": "list_issues_api_scans__scan_id__issues_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scan_id",
+            "required": true,
+            "schema": {
+              "title": "Scan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "resolved",
+                    "dismissed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "severity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "high",
+                    "medium",
+                    "low"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "class_mismatch",
+                    "tag_missing_in_scan",
+                    "untagged_equipment",
+                    "tag_split",
+                    "estimate_unreliable",
+                    "zone_borrowed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IssueOut"
+                  },
+                  "title": "Response List Issues Api Scans  Scan Id  Issues Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Issues"
+      }
+    },
+    "/api/scans/{scan_id}/issues/{issue_id}/resolve": {
+      "post": {
+        "operationId": "resolve_issue_api_scans__scan_id__issues__issue_id__resolve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scan_id",
+            "required": true,
+            "schema": {
+              "title": "Scan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "issue_id",
+            "required": true,
+            "schema": {
+              "title": "Issue Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Resolution"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Issue"
+      }
+    }
+  }
+}

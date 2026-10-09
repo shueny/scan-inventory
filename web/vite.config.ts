@@ -23,12 +23,20 @@ function serveData(): Plugin {
   };
 }
 
+// In api mode the app calls /api on its own origin, as behind nginx in PRD 6. The dev and
+// preview servers pass those calls on to the FastAPI service from `docker compose up`.
+const apiProxy = { "/api": { target: process.env.API_PROXY_TARGET ?? "http://127.0.0.1:8000" } };
+
 export default defineConfig({
   plugins: [react(), tailwindcss(), serveData()],
+  server: { proxy: apiProxy },
+  preview: { proxy: apiProxy },
   test: {
     globals: true,
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     css: false,
+    // The API contract run needs Docker and is started with `pnpm test:contract`.
+    exclude: ["**/node_modules/**", "src/data/contract/apiSource.contract.test.ts"],
   },
 });

@@ -1,96 +1,134 @@
-import { NotFoundError } from "./ScanDataSource";
+import { fixtureFetch, SCAN } from "./contract/fixtures";
+import { browserEventStore, eventsKey, memoryEventStore } from "./eventStore";
 import { StaticDataSource } from "./StaticDataSource";
 
-const files: Record<string, unknown> = {
-  "/data/scan.json": { scan_id: "nora", name: "NORA", classes: [], zones: ["NW"] },
-  "/data/instances.json": {
-    summary: {},
-    instances: [
-      { scan_id: "nora", instance_id: 1, class_id: 12, tag: "PSV-1" },
-      { scan_id: "nora", instance_id: 2, class_id: 8, tag: null },
-    ],
-  },
-  "/data/issues.json": { issues: [{ issue_id: "class_mismatch:1", severity: "high" }] },
-};
+// Behaviour shared with the API is in contract/suite.ts. These tests cover what only the
+// static demo does: file loading and the review events kept in browser storage.
 
-function fakeFetch() {
-  const calls: string[] = [];
-  const fn = (url: string) => {
-    calls.push(url);
-    const body = files[url];
-    return Promise.resolve(
-      body ? new Response(JSON.stringify(body)) : new Response("missing", { status: 404 }),
-    );
+/** A minimal in-memory Storage; `full` refuses writes like a full quota. */
+function fakeStorage(options: { full?: boolean } = {}): Storage {
+  const data = new Map<string, string>();
+  return {
+    get length() {
+      return data.size;
+    },
+    key: (i) => [...data.keys()][i] ?? null,
+    getItem: (k) => data.get(k) ?? null,
+    setItem: (k, v) => {
+      if (options.full) throw new DOMException("full", "QuotaExceededError");
+      data.set(k, v);
+    },
+    removeItem: (k) => void data.delete(k),
+    clear: () => data.clear(),
   };
-  return { fn, calls };
 }
 
-describe("StaticDataSource", () => {
-  it("lists instances as unreviewed with their annotated class as current class", async () => {
-    const source = new StaticDataSource("/data", fakeFetch().fn);
-
-    const instances = await source.listInstances("nora");
-
-    expect(instances).toHaveLength(2);
-    expect(instances[0]).toMatchObject({
-      instance_id: 1,
-      review_status: "unreviewed",
-      current_class_id: 12,
-    });
+function source(storage: Storage, fetchFn = fixtureFetch()) {
+  return new StaticDataSource("/data", {
+    fetchFn,
+    storeFor: (scanId) => browserEventStore(eventsKey(scanId), storage),
   });
+}
 
-  it("returns one instance with an empty history", async () => {
-    const source = new StaticDataSource("/data", fakeFetch().fn);
-
-    const detail = await source.getInstance("nora", 2);
-
-    expect(detail.instance_id).toBe(2);
-    expect(detail.history).toEqual([]);
-  });
-
-  it("rejects unknown scans and instances with NotFoundError", async () => {
-    const source = new StaticDataSource("/data", fakeFetch().fn);
-
-    await expect(source.getScan("other")).rejects.toBeInstanceOf(NotFoundError);
-    await expect(source.getInstance("nora", 999)).rejects.toBeInstanceOf(NotFoundError);
-  });
-
-  it("marks every issue as open", async () => {
-    const source = new StaticDataSource("/data", fakeFetch().fn);
-
-    const [issue] = await source.listIssues("nora");
-
-    expect(issue?.status).toBe("open");
-  });
-
+describe("StaticDataSource files", () => {
   it("downloads each file only once", async () => {
-    const { fn, calls } = fakeFetch();
-    const source = new StaticDataSource("/data", fn);
+    const calls: string[] = [];
+    const fetchAll = fixtureFetch();
+    const s = new StaticDataSource("/data", {
+      fetchFn: (url) => (calls.push(url), fetchAll(url)),
+      storeFor: () => memoryEventStore(),
+    });
 
-    await Promise.all([source.listInstances("nora"), source.getInstance("nora", 1)]);
+    await Promise.all([s.listInstances(SCAN), s.getInstance(SCAN, 1), s.listIssues(SCAN)]);
 
-    expect(calls.filter((u) => u.endsWith("instances.json"))).toHaveLength(1);
-    expect(calls.filter((u) => u.endsWith("scan.json"))).toHaveLength(1);
+    expect(calls.sort()).toEqual(["/data/instances.json", "/data/issues.json", "/data/scan.json"]);
   });
 
   it("reports a failed download and retries on the next call", async () => {
     let fail = true;
-    const source = new StaticDataSource("/data", (url) =>
-      fail
-        ? Promise.resolve(new Response("down", { status: 503 }))
-        : Promise.resolve(new Response(JSON.stringify(files[url]))),
-    );
+    const fetchAll = fixtureFetch();
+    const s = new StaticDataSource("/data", {
+      fetchFn: (url) =>
+        fail ? Promise.resolve(new Response("down", { status: 503 })) : fetchAll(url),
+      storeFor: () => memoryEventStore(),
+    });
 
-    await expect(source.getScan("nora")).rejects.toThrow("HTTP 503");
+    await expect(s.getScan(SCAN)).rejects.toThrow("HTTP 503");
     fail = false;
-    await expect(source.getScan("nora")).resolves.toMatchObject({ scan_id: "nora" });
+    await expect(s.getScan(SCAN)).resolves.toMatchObject({ scan_id: SCAN });
+  });
+});
+
+describe("StaticDataSource review events in the browser", () => {
+  it("keeps changes after a page reload (a new source on the same storage)", async () => {
+    const storage = fakeStorage();
+    await source(storage).updateInstance(SCAN, 2, { review_status: "rejected", note: "ghost" });
+
+    const reloaded = await source(storage).getInstance(SCAN, 2);
+
+    expect(reloaded.review_status).toBe("rejected");
+    expect(reloaded.history).toHaveLength(1);
+    expect(JSON.parse(storage.getItem("scan-inventory:test:v1:events") ?? "[]")).toHaveLength(1);
   });
 
-  it("does not support review changes yet", async () => {
-    const source = new StaticDataSource("/data", fakeFetch().fn);
+  it("numbers events 1, 2, 3 and stamps them with the given time", async () => {
+    const storage = fakeStorage();
+    const s = new StaticDataSource("/data", {
+      fetchFn: fixtureFetch(),
+      storeFor: (id) => browserEventStore(eventsKey(id), storage),
+      now: () => new Date("2026-10-09T12:00:00Z"),
+    });
 
-    await expect(
-      source.updateInstance("nora", 1, { review_status: "confirmed" }),
-    ).rejects.toThrow();
+    await s.updateInstance(SCAN, 3, { current_class_id: 1 });
+    await s.updateInstance(SCAN, 2, { review_status: "confirmed" });
+
+    const all = JSON.parse(storage.getItem(eventsKey(SCAN)) ?? "[]") as { id: number }[];
+    expect(all.map((e) => e.id)).toEqual([1, 2, 3]);
+    expect((await s.getInstance(SCAN, 2)).history[0]?.created_at).toBe("2026-10-09T12:00:00.000Z");
+  });
+
+  it("resetDemo forgets every change", async () => {
+    const storage = fakeStorage();
+    const s = source(storage);
+    await s.resolveIssue(SCAN, "class_mismatch:1", { action: "accept_suggestion" });
+
+    await s.resetDemo();
+
+    expect((await s.getInstance(SCAN, 1)).review_status).toBe("unreviewed");
+    expect((await s.listIssues(SCAN)).every((i) => i.status === "open")).toBe(true);
+    expect(storage.getItem(eventsKey(SCAN))).toBeNull();
+  });
+
+  it("works in memory when browser storage is blocked, and says so", async () => {
+    const blocked = vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
+      throw new DOMException("blocked", "SecurityError");
+    });
+    const s = new StaticDataSource("/data", { fetchFn: fixtureFetch() }); // default store
+
+    await s.updateInstance(SCAN, 2, { review_status: "confirmed" });
+
+    expect((await s.getInstance(SCAN, 2)).review_status).toBe("confirmed");
+    expect(s.isPersistent(SCAN)).toBe(false);
+    blocked.mockRestore();
+  });
+
+  it("falls back to memory when storage refuses writes (e.g. full)", async () => {
+    const s = source(fakeStorage({ full: true }));
+
+    await s.updateInstance(SCAN, 2, { review_status: "confirmed" });
+
+    expect((await s.getInstance(SCAN, 2)).review_status).toBe("confirmed");
+    expect(s.isPersistent(SCAN)).toBe(false);
+  });
+
+  it("ignores unreadable stored data and events stored for another data version", async () => {
+    const storage = fakeStorage();
+    storage.setItem(eventsKey(SCAN), "{not json");
+    storage.setItem(eventsKey(SCAN, "v0"), JSON.stringify([{ id: 1, action: "change_class" }]));
+
+    const detail = await source(storage).getInstance(SCAN, 1);
+
+    expect(detail.review_status).toBe("unreviewed");
+    expect(detail.history).toEqual([]);
   });
 });

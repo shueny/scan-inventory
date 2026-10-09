@@ -8,6 +8,7 @@ import {
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { ClassInfo, Instance, Vec3 } from "../data/types";
+import { boxEdgePositions } from "../domain/boxLines";
 import { easeInOutCubic, lerpView, viewForBox, type CameraView } from "../domain/cameraView";
 import { classColorTable, visibleClassFilter } from "../domain/classColors";
 import { pickByBoxes, type PickBox } from "../domain/pickBoxes";
@@ -32,6 +33,8 @@ const FOV = 55;
 const FLY_MS = 700;
 const CLICK_TOLERANCE_PX = 4;
 const SELECTION_COLOR = 0x111827;
+// Not a class colour, and drawn over the points, so outlines read on any object.
+const FILTER_COLOR = 0x000000;
 
 /**
  * Plain Three.js viewer (ADR 0007). Owns the renderer, camera, Potree loader, picking,
@@ -44,10 +47,21 @@ export class Viewer {
   private readonly controls: OrbitControls;
   private readonly potree = new Potree("v2");
   private readonly selectionBox = new THREE.Box3Helper(new THREE.Box3(), SELECTION_COLOR);
+  /** Outlines of the objects that pass the inventory filters (ADR 0010). */
+  private readonly filterBoxes = new THREE.LineSegments(
+    new THREE.BufferGeometry(),
+    new THREE.LineBasicMaterial({
+      color: FILTER_COLOR,
+      transparent: true,
+      opacity: 0.45,
+      depthTest: false,
+    }),
+  );
   private readonly resizeObserver: ResizeObserver;
   private cloud: PointCloudOctree | null = null;
   private classes: ClassInfo[] = [];
   private backgroundVisible = true;
+  private colorMode: ColorMode = "class";
   private pickBoxes: PickBox[] = [];
   private backgroundClassIds = new Set<number>();
   private flight: { from: CameraView; to: CameraView; start: number } | null = null;
@@ -73,6 +87,8 @@ export class Viewer {
 
     this.selectionBox.visible = false;
     this.scene.add(this.selectionBox);
+    this.filterBoxes.visible = false;
+    this.scene.add(this.filterBoxes);
     this.potree.pointBudget = options.pointBudget;
 
     const canvas = this.renderer.domElement;
@@ -97,6 +113,7 @@ export class Viewer {
     this.cloud = cloud;
     this.scene.add(cloud);
     this.applyClasses();
+    this.applyColorMode();
     this.frameAll(false);
   }
 
@@ -107,10 +124,10 @@ export class Viewer {
     this.applyClasses();
   }
 
+  /** Remembered and applied once the cloud has loaded, like the class colours. */
   setColorMode(mode: ColorMode): void {
-    if (!this.cloud) return;
-    this.cloud.material.pointColorType =
-      mode === "class" ? PointColorType.CLASSIFICATION : PointColorType.RGB;
+    this.colorMode = mode;
+    this.applyColorMode();
   }
 
   setBackgroundVisible(visible: boolean): void {
@@ -123,6 +140,19 @@ export class Viewer {
     this.pickBoxes = instances
       .filter((i) => !i.is_background)
       .map((i) => ({ id: i.instance_id, min: i.bbox_min, max: i.bbox_max }));
+  }
+
+  /**
+   * Outline the objects that pass the filters; null removes the outlines (no filter).
+   * The loader cannot dim single objects, so filtered-out points stay visible and the
+   * outlines show what the list contains (PRD 8.3 fallback, ADR 0010).
+   */
+  setFilterBoxes(instances: Instance[] | null): void {
+    const geometry = this.filterBoxes.geometry;
+    const boxes = (instances ?? []).map((i) => ({ min: i.bbox_min, max: i.bbox_max }));
+    geometry.setAttribute("position", new THREE.BufferAttribute(boxEdgePositions(boxes), 3));
+    geometry.computeBoundingSphere();
+    this.filterBoxes.visible = instances !== null;
   }
 
   /** Draw the instance's bounding box and fly to it; null clears the selection. */
@@ -167,6 +197,8 @@ export class Viewer {
     canvas.removeEventListener("pointerup", this.handlePointerUp);
     this.controls.dispose();
     this.cloud?.dispose();
+    this.filterBoxes.geometry.dispose();
+    this.filterBoxes.material.dispose();
     this.renderer.dispose();
     canvas.remove();
   }
@@ -183,6 +215,12 @@ export class Viewer {
       backgroundVisible: this.backgroundVisible,
     });
     material.useFilterByClassification = !this.backgroundVisible;
+  }
+
+  private applyColorMode(): void {
+    if (!this.cloud) return;
+    this.cloud.material.pointColorType =
+      this.colorMode === "class" ? PointColorType.CLASSIFICATION : PointColorType.RGB;
   }
 
   private readonly handlePointerDown = (e: PointerEvent): void => {

@@ -1,6 +1,7 @@
 import type { ClassInfo, Vec3 } from "../data/types";
 import { easeInOutCubic, lerpView, viewForBox } from "./cameraView";
 import { classColorTable, hexToRgb, visibleClassFilter } from "./classColors";
+import { boxEdgePositions } from "./boxLines";
 import { pickByBoxes, rayBoxDistance } from "./pickBoxes";
 
 describe("rayBoxDistance", () => {
@@ -115,5 +116,24 @@ describe("easing and interpolation", () => {
     const b = { position: [2, 4, 6] as Vec3, target: [1, 1, 1] as Vec3 };
 
     expect(lerpView(a, b, 0.5)).toEqual({ position: [1, 2, 3], target: [0.5, 0.5, 0.5] });
+  });
+});
+
+describe("boxEdgePositions", () => {
+  it("writes 12 edges of 2 points per box, each edge along one axis", () => {
+    const pos = boxEdgePositions([{ min: [0, 0, 0], max: [1, 2, 3] }]);
+
+    expect(pos).toHaveLength(12 * 2 * 3);
+    for (let e = 0; e < 12; e++) {
+      const a = pos.slice(e * 6, e * 6 + 3);
+      const b = pos.slice(e * 6 + 3, e * 6 + 6);
+      const changed = [0, 1, 2].filter((k) => a[k] !== b[k]);
+      expect(changed).toHaveLength(1);
+    }
+    expect(Math.max(...pos)).toBe(3);
+  });
+
+  it("is empty for no boxes", () => {
+    expect(boxEdgePositions([])).toHaveLength(0);
   });
 });

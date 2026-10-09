@@ -197,3 +197,37 @@ Not fixed: the voxel key overflow below ~4.5 µm (D9, unreachable) and the repor
 1. Why did `--voxel-size nan` pass the old check `args.voxel_size <= 0`, and how does the new check catch it?
 2. The old code had a friendly "does not fit point_source_id" message. Why did nobody ever see it for an id of 70000?
 3. An export is interrupted by Ctrl+C at 80 %. What is on disk afterwards, old code vs new code?
+
+---
+
+## T5 · Inventory and detail panels
+
+### What was built
+
+- **Generated types**: `python -m app.openapi` exports the API's OpenAPI schema to `web/src/data/openapi.json`; `openapi-typescript` turns it into `web/src/data/api-schema.d.ts`. `make types` does both. A test on each side fails if the two drift apart.
+- **`ApiDataSource`**: the `ScanDataSource` interface over the FastAPI endpoints. HTTP 404/422/409 become `NotFoundError`/`InvalidChangeError`/`ConflictError`. The app calls `/api` on its own origin; the Vite dev server proxies it to `docker compose`'s API on port 8000.
+- **Write support in `StaticDataSource`**: review changes are an append-only event list in `localStorage`; the current state is the static JSON with all events replayed. The rules (`web/src/domain/review.ts`) mirror the API's `services.py`. Blocked or full storage falls back to memory.
+- **Contract tests**: one suite of 14 tests (`web/src/data/contract/suite.ts`) runs against both data sources on the same fixtures. The API side runs against the real API on a throwaway Postgres (`api/tests/contract_server.py`). `pnpm test:contract`; part of `make check`.
+- **Panels**: left filter panel (tag search, zones with counts, system, review status, classes with colour and counts, background rows toggle); sortable inventory table under the 3D view (click or Enter = select and fly to); detail panel with confirm / reject / change class, an optional note and the history list.
+- **3D**: objects that pass the filters get a dark outline when a filter is active (the loader cannot dim single objects). Fixed a T3 race that sometimes left the view in scan colours on first load in development.
+
+Demo steps checked in the browser at 1440 × 900, in static mode and in api mode (against a throwaway database with the real data): 3 (zones with counts, untick → list shrinks, outlines in 3D), 5 (row click → fly-to and details), 7 single object (confirm with a note, change class, history entry, still there after a reload). Step 4 (click in 3D) uses the T3 picking unchanged; the detail panel it opens is the one tested here.
+
+### Key concepts
+
+- **Contract test**: one list of expectations ("confirming twice writes one event", "an unknown class is a 422") run against every implementation of an interface. If the static demo and the API ever behave differently, a test names the difference.
+- **Event sourcing (small)**: store what happened ("status unreviewed → confirmed", "class 9 → 2"), not the result. The result is computed by replaying the events. History comes for free, and "reset demo" is deleting the list.
+- **Same rules, two places**: the API checks a change inside a database transaction; the demo plans it on a copy of the state and only appends the events if every check passed. Both are "all or nothing", done differently.
+- **Generated types**: the API's Pydantic models are the single source. If `review_status` gains a value, the generated TypeScript type changes and the compiler points at every place that must handle it.
+- **Same-origin API**: the browser blocks calls to another origin unless the server allows it (CORS). Serving the app and `/api` from one origin (a dev proxy now, nginx later) removes that whole class of problem.
+- **Client-side filtering**: 263 rows is small. Filtering, counting and sorting in the browser make every filter instant and work the same in both modes.
+
+### Why this way
+
+[ADR 0010](adr/0010-data-sources-contract-and-panels.md) (proposed): committed schema + generated types with drift tests; contract suite on the API's fixtures against a throwaway API; event list in `localStorage`; outlines as the 3D filter fallback; same-origin `/api` with a dev proxy.
+
+### Quiz
+
+1. You confirm an object in the public demo, then reload the page. Where is the change stored, and how does the page rebuild the object's current status from it?
+2. A teammate adds a new review status to the API's `schemas.py` but forgets `make types`. Which test fails first, and what does the fix look like?
+3. Why does the contract suite run against a throwaway database instead of the `docker compose` database, and what would go wrong if two tests shared data without the reset?

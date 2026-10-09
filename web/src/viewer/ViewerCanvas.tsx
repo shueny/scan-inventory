@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { POINT_BUDGET, TILES_BASE_URL } from "../config";
 import { useInstances, useScan } from "../data/hooks";
+import { filterInstances, isFiltering } from "../domain/filters";
 import { useViewStore } from "../state/viewStore";
 import { Viewer, type ViewerStats } from "./Viewer";
 
@@ -20,6 +21,14 @@ export function ViewerCanvas() {
   const colorMode = useViewStore((s) => s.colorMode);
   const backgroundVisible = useViewStore((s) => s.backgroundVisible);
   const select = useViewStore((s) => s.select);
+  const filters = useViewStore((s) => s.filters);
+  const filtered = useMemo(
+    () =>
+      instances.data && isFiltering(filters)
+        ? filterInstances(instances.data, { ...filters, includeBackground: false })
+        : null,
+    [instances.data, filters],
+  );
 
   // Create once per mount; dispose on unmount (StrictMode mounts twice in dev).
   useEffect(() => {
@@ -31,9 +40,11 @@ export function ViewerCanvas() {
       onStats: setStats,
     });
     viewer.current = v;
+    // Only the viewer still mounted reports its state (StrictMode creates one and
+    // throws it away first; its load must not mark the second one as ready).
     v.load().then(
-      () => setLoadState("ready"),
-      () => setLoadState("error"),
+      () => viewer.current === v && setLoadState("ready"),
+      () => viewer.current === v && setLoadState("error"),
     );
     return () => {
       v.dispose();
@@ -50,8 +61,12 @@ export function ViewerCanvas() {
   }, [instances.data]);
 
   useEffect(() => {
-    if (loadState === "ready") viewer.current?.setColorMode(colorMode);
-  }, [loadState, colorMode]);
+    viewer.current?.setFilterBoxes(filtered);
+  }, [filtered]);
+
+  useEffect(() => {
+    viewer.current?.setColorMode(colorMode);
+  }, [colorMode]);
 
   useEffect(() => {
     viewer.current?.setBackgroundVisible(backgroundVisible);

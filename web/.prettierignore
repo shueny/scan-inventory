@@ -1,2 +1,4 @@
 pnpm-lock.yaml
 dist
+src/data/openapi.json
+src/data/api-schema.d.ts

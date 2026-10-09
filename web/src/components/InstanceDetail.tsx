@@ -1,4 +1,7 @@
 import type { ClassInfo, InstanceDetail as Detail, LocationSource } from "../data/types";
+import { ReviewActions } from "./ReviewActions";
+import { ReviewHistory } from "./ReviewHistory";
+import { ReviewStatusBadge } from "./ReviewStatusBadge";
 
 const LOCATION_NOTE: Record<LocationSource, string | null> = {
   pnid: null,
@@ -15,10 +18,15 @@ function metres(v: number): string {
   return `${v.toFixed(2)} m`;
 }
 
-/** Right panel: every field of the selected instance (PRD 8.4). Review actions come in T5. */
-export function InstanceDetail({ instance, cls }: { instance: Detail; cls?: ClassInfo }) {
+/**
+ * Right panel (PRD 8.4): every field of the selected object, the review actions and the
+ * history of changes.
+ */
+export function InstanceDetail({ instance, classes }: { instance: Detail; classes: ClassInfo[] }) {
   const [sx, sy, sz] = instance.bbox_size;
   const zoneNote = LOCATION_NOTE[instance.location_source];
+  const current = classes.find((c) => c.id === instance.current_class_id);
+  const corrected = instance.current_class_id !== instance.class_id;
 
   return (
     <article aria-labelledby="detail-heading" className="flex flex-col gap-4">
@@ -31,10 +39,11 @@ export function InstanceDetail({ instance, cls }: { instance: Detail; cls?: Clas
           <span
             aria-hidden
             className="size-3 rounded-sm border border-black/10"
-            style={{ backgroundColor: cls?.color }}
+            style={{ backgroundColor: current?.color }}
           />
-          {instance.class_name}
+          {current?.name ?? instance.class_name}
         </p>
+        {corrected && <p className="text-xs text-muted">Annotated as {instance.class_name}</p>}
       </header>
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
@@ -64,28 +73,13 @@ export function InstanceDetail({ instance, cls }: { instance: Detail; cls?: Clas
             {metres(instance.diameter_est_m)} <EstimateBadge />
           </Field>
         )}
-        <Field label="Review">{instance.review_status}</Field>
+        <Field label="Review">
+          <ReviewStatusBadge status={instance.review_status} />
+        </Field>
       </dl>
 
-      <section aria-labelledby="history-heading">
-        <h3
-          id="history-heading"
-          className="mb-1 text-xs font-medium tracking-wide text-muted uppercase"
-        >
-          History
-        </h3>
-        {instance.history.length === 0 ? (
-          <p className="text-sm text-muted">No review changes yet.</p>
-        ) : (
-          <ul className="text-sm">
-            {instance.history.map((e) => (
-              <li key={e.id}>
-                {e.action}: {e.from_value} → {e.to_value}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <ReviewActions key={instance.instance_id} instance={instance} classes={classes} />
+      <ReviewHistory events={instance.history} classes={classes} />
     </article>
   );
 }
