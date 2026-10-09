@@ -20,10 +20,12 @@ export function ReviewActions({
 }) {
   const update = useUpdateInstance(instance.instance_id);
   const [note, setNote] = useState("");
-  // Only the reviewer's pick is local state; otherwise the dropdown shows the object's
-  // class as it is now, also after it was changed from the review queue.
-  const [picked, setPicked] = useState<number | null>(null);
-  const classId = picked ?? instance.current_class_id;
+  // Only the reviewer's pick is local state, and it belongs to the class shown when it was
+  // made: once the object's class changes (here or from the review queue), the pick lapses
+  // and the dropdown shows the class as it is now.
+  const current = instance.current_class_id;
+  const [pick, setPick] = useState<{ value: number; base: number } | null>(null);
+  const classId = pick && pick.base === current ? pick.value : current;
   const [saved, setSaved] = useState<string | null>(null);
 
   const save = (change: InstanceChange, what: string) => {
@@ -33,7 +35,7 @@ export function ReviewActions({
       {
         onSuccess: () => {
           setNote("");
-          setPicked(null);
+          setPick(null);
           setSaved(what);
         },
       },
@@ -71,7 +73,7 @@ export function ReviewActions({
         <select
           id="class-select"
           value={classId}
-          onChange={(e) => setPicked(Number(e.target.value))}
+          onChange={(e) => setPick({ value: Number(e.target.value), base: current })}
           className="min-w-0 flex-1 rounded-md border border-line px-2 py-1 text-sm"
         >
           {classes.map((c) => (

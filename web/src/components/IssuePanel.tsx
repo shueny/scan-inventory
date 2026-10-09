@@ -24,8 +24,9 @@ export function IssuePanel({
   classes: ClassInfo[];
 }) {
   const select = useViewStore((s) => s.select);
-  // Open when this panel appeared: if it closes while shown, the reviewer just resolved it.
-  const [openedHere] = useState(issue.status === "open");
+  // Set when the reviewer resolves the issue in this panel; only then does focus move to
+  // the result (not when someone else closed it and a refetch shows that).
+  const [resolvedHere, setResolvedHere] = useState(false);
   const byId = new Map(instances.map((i) => [i.instance_id, i]));
   const className = (id: number | null) => classes.find((c) => c.id === id)?.name ?? String(id);
 
@@ -67,9 +68,10 @@ export function IssuePanel({
           classes={classes}
           className={className}
           currentClassId={byId.get(issue.instance_ids[0] ?? -1)?.current_class_id ?? null}
+          onResolved={() => setResolvedHere(true)}
         />
       ) : (
-        <Closed issue={issue} classes={classes} focusHeading={openedHere} />
+        <Closed issue={issue} classes={classes} focusHeading={resolvedHere} />
       )}
     </article>
   );
@@ -80,29 +82,35 @@ function Resolve({
   classes,
   className,
   currentClassId,
+  onResolved,
 }: {
   issue: Issue;
   classes: ClassInfo[];
   className: (id: number | null) => string;
   /** Class of the issue's (first) object now; the class dropdown starts there. */
   currentClassId: number | null;
+  onResolved: () => void;
 }) {
   const resolve = useResolveIssue();
   const [note, setNote] = useState("");
   const firstCandidate = issue.candidate_tags[0]?.tag ?? "";
   const [tag, setTag] = useState(firstCandidate);
-  // Only the reviewer's pick is local state; otherwise the dropdown shows the object's
-  // class as it is now, also after a change made elsewhere (review rounds 1 and 2).
-  const [picked, setPicked] = useState<number | null>(null);
-  const classId = picked ?? currentClassId;
+  // Only the reviewer's pick is local state, and it belongs to the class shown when it was
+  // made: once the object's class changes (here or in another panel), the pick lapses and
+  // the dropdown shows the class as it is now (review rounds 1 to 3).
+  const [pick, setPick] = useState<{ value: number; base: number | null } | null>(null);
+  const classId = pick && pick.base === currentClassId ? pick.value : currentClassId;
   const actions = issueActions(issue);
   const busy = resolve.isPending;
 
   const send = (resolution: Resolution) =>
-    resolve.mutate({
-      issueId: issue.issue_id,
-      resolution: { ...resolution, ...(note.trim() ? { note } : {}) },
-    });
+    resolve.mutate(
+      {
+        issueId: issue.issue_id,
+        resolution: { ...resolution, ...(note.trim() ? { note } : {}) },
+      },
+      { onSuccess: onResolved },
+    );
 
   return (
     <section aria-labelledby="resolve-heading" className="flex flex-col gap-2">
@@ -173,7 +181,7 @@ function Resolve({
           <select
             id="issue-class"
             value={classId ?? ""}
-            onChange={(e) => setPicked(Number(e.target.value))}
+            onChange={(e) => setPick({ value: Number(e.target.value), base: currentClassId })}
             className="min-w-0 flex-1 rounded-md border border-line px-2 py-1"
           >
             {classId === null && <option value="">Choose a class</option>}

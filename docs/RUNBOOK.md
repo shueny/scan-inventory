@@ -89,3 +89,8 @@ None yet.
   CI now pre-pulls with retries and skips the testcontainers clean-up image), 0 high, 2 medium
   (both class pickers kept a stale class after a change in the other panel; one click undid
   it), 4 low. All fixed, mediums with tests that failed first.
+- 2026-10-09: T6 review round 3 (last): CI red on 269c3a3 again, auth.docker.io unreachable from
+  the runner, so retries could not help (high). CI now pulls the same postgres image from the
+  AWS public mirror and tags it. 4 low (sleep after the last retry; focus moved on a refetch;
+  a stale pick one step later; no negative focus test), all fixed with tests. No finding left
+  open; merge only after CI is green on the fix.

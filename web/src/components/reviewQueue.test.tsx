@@ -217,4 +217,37 @@ describe("ReviewQueue", () => {
     expect(screen.getByRole("combobox", { name: "New class" })).toHaveValue("12");
     expect(screen.getByRole("button", { name: "Change class" })).toBeDisabled();
   });
+
+  it("opening an issue that is already closed does not move the focus", async () => {
+    const user = userEvent.setup();
+    renderQueue();
+    await user.click(await screen.findByRole("button", { name: "tag_split:P-9" }));
+    await user.click(screen.getByRole("button", { name: /^✕ / }));
+    expect(await screen.findByRole("heading", { name: "Dismissed" })).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "zone_borrowed:5" }));
+    await user.click(screen.getByRole("tab", { name: /^Resolved/ }));
+    await user.click(screen.getByRole("button", { name: /tag_split:P-9/ }));
+
+    expect(screen.getByRole("heading", { name: "Dismissed" })).not.toHaveFocus();
+  });
+
+  it("a pick that the other panel makes current stops counting as a pick", async () => {
+    const user = userEvent.setup();
+    renderQueue({ withDetail: true });
+    await user.click(await screen.findByRole("button", { name: "untagged_equipment:2" }));
+    const objectPanel = screen.getByRole("region", { name: "Review" });
+    const issuePanel = screen.getByRole("region", { name: "Resolve" });
+
+    await user.selectOptions(within(issuePanel).getByRole("combobox"), "Pipe"); // not saved
+    await user.selectOptions(within(objectPanel).getByRole("combobox"), "Pipe");
+    await user.click(within(objectPanel).getByRole("button", { name: "Change class" }));
+    await screen.findByText("Class: Transmitter → Pipe");
+    await user.selectOptions(within(objectPanel).getByRole("combobox"), "Motor");
+    await user.click(within(objectPanel).getByRole("button", { name: "Change class" }));
+    await screen.findByText("Class: Pipe → Motor");
+
+    expect(within(issuePanel).getByRole("combobox")).toHaveValue("13");
+    expect(within(issuePanel).getByRole("button", { name: "Change class" })).toBeDisabled();
+  });
 });

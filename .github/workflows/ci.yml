@@ -43,14 +43,21 @@ jobs:
       - name: Install
         run: make install
 
-      # The API and contract tests start postgres:16-alpine. Pull it up front with retries,
-      # so a short Docker Hub rate-limit or network error does not fail the gate.
+      # The API and contract tests start postgres:16-alpine. Docker Hub was unreachable or
+      # rate-limited from the runners (T6 review rounds 2 and 3), so pull the same official
+      # image from the AWS public mirror and tag it: testcontainers then finds it locally.
       - name: Pull test database image
         run: |
-          for attempt in 1 2 3 4 5; do
-            docker pull postgres:16-alpine && exit 0
-            echo "pull failed (attempt $attempt), retrying in $((attempt * 20)) s"
-            sleep $((attempt * 20))
+          mirror=public.ecr.aws/docker/library/postgres:16-alpine
+          for attempt in 1 2 3; do
+            if docker pull "$mirror"; then
+              docker tag "$mirror" postgres:16-alpine
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "pull failed (attempt $attempt), retrying in $((attempt * 15)) s"
+              sleep $((attempt * 15))
+            fi
           done
           exit 1
 
