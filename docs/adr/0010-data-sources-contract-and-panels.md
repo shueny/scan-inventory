@@ -1,8 +1,8 @@
 # 0010 · Generated types, data source contract tests and inventory panels
 
-Status: proposed (needs owner confirmation) · 2026-10-09 · Task T5
+Status: accepted by the owner · 2026-10-09 · Task T5
 
-The owner asked for T5 to run to the end without stopping, so each choice below was made with the recommended option and is listed here for review. Each one can be changed on its own.
+The owner asked for T5 to run to the end without stopping, so each choice below was made with the recommended option and reviewed afterwards; the owner accepted all of them.
 
 ## Context
 

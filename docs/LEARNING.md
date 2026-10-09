@@ -224,7 +224,7 @@ Demo steps checked in the browser at 1440 × 900, in static mode and in api mode
 
 ### Why this way
 
-[ADR 0010](adr/0010-data-sources-contract-and-panels.md) (proposed): committed schema + generated types with drift tests; contract suite on the API's fixtures against a throwaway API; event list in `localStorage`; outlines as the 3D filter fallback; same-origin `/api` with a dev proxy.
+[ADR 0010](adr/0010-data-sources-contract-and-panels.md) (accepted): committed schema + generated types with drift tests; contract suite on the API's fixtures against a throwaway API; event list in `localStorage`; outlines as the 3D filter fallback; same-origin `/api` with a dev proxy.
 
 ### Quiz
 
