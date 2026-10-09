@@ -119,3 +119,35 @@ test("demo steps 6 and 7: resolve an issue from the queue, kept after a reload",
   ).toBeVisible();
   await expect(page.getByText("“P&ID is right”").first()).toBeVisible();
 });
+
+test("demo steps 8 and 9: dashboard numbers and a CSV export with review status", async ({
+  page,
+}) => {
+  await open(page);
+  // One review first, so the export has a status other than "unreviewed".
+  await table(page).getByText("PSV-1").click();
+  await page
+    .getByRole("article")
+    .getByRole("button", { name: /Confirm/ })
+    .click();
+  await expect(page.getByRole("article").getByText("Status: Unreviewed → Confirmed")).toBeVisible();
+
+  const lists = page.getByRole("region", { name: "Inventory and review" });
+  await lists.getByRole("tab", { name: "Dashboard" }).click();
+  await expect(lists.getByText("Objects per zone, by class family").first()).toBeVisible();
+  await expect(lists.getByText("estimate (PCA)")).toBeVisible();
+  await expect(lists.getByText(/1 of 5 objects reviewed/)).toBeVisible();
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    lists.getByRole("button", { name: "Export CSV (5 objects)" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^nora-inventory-\d{4}-\d{2}-\d{2}\.csv$/);
+  const path = await download.path();
+  const { readFile } = await import("node:fs/promises");
+  const csv = (await readFile(path, "utf8")).replace("﻿", "");
+  const [header, ...rows] = csv.trimEnd().split("\r\n");
+  expect(header).toContain("review_status");
+  expect(rows).toHaveLength(5);
+  expect(rows.find((r) => r.startsWith("1,PSV-1,"))).toMatch(/,confirmed$/);
+});

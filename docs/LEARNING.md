@@ -262,3 +262,33 @@ Browser check on the real data (45 issues): static mode, assigning PT-108A to tr
 1. Why can the resolved tab not get the history of `tag_missing_in_scan:PCV-104A` from the object's history, and where does it come from instead?
 2. A `tag_split` issue has two objects. Why does the queue not offer "Change class" or "Assign tag" for it, and which part of the code decides that?
 3. After you accept a class suggestion, the table row, the detail panel and the open count all change at once. Which code makes that happen without reloading the page?
+
+---
+
+## T7 · Dashboard and export
+
+### What was built
+
+- `web/src/domain/summary.ts`: objects per zone split by class family, estimated pipe length per zone with the unreliable share, review progress and open issues per severity. Pure functions with unit tests, plus a test on the real inventory that checks the PRD's numbers (85 pipes, ≈ 110 m, 24 unreliable).
+- `web/src/domain/exportCsv.ts`: the inventory as CSV, built in the browser from the current (filtered) list, with current class, annotated class and review status.
+- A "Dashboard" tab under the 3D view: a stacked bar chart per zone (Recharts), the pipe length table labelled "estimate (PCA)", review progress, open issues, and the export button.
+- A smoke test that reviews an object, opens the dashboard and downloads the CSV, then reads the file and checks the review status in it.
+
+Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.2 m, 24 unreliable pipes (66 % of the length), open issues 2 / 15 / 28.
+
+### Key concepts
+
+- **Derived numbers, one place**: the dashboard never stores totals; it computes them from the same instance list the table shows. A correction in the review queue changes the chart at once, in both modes.
+- **Estimate vs measurement**: the pipe length is a sum of PCA guesses. Showing the unreliable share next to it says how much of the number to trust, instead of hiding it.
+- **CSV is a format with rules**: a value with a comma or a quote must be quoted, and quotes doubled. Spreadsheets also run cells that start with `=` as formulas, so text like that is defused with a leading `'`.
+- **Charts and screen readers**: a chart is a picture. The same numbers are also given as a table that only screen readers see.
+
+### Why this way
+
+[ADR 0013](adr/0013-dashboard-and-export.md) (proposed): families from the class palette, "SW - SE" as its own zone, export of the filtered list.
+
+### Quiz
+
+1. You change pipe 96 to "Piping components" in the review queue. Which dashboard numbers change, and why does no code have to "update the dashboard"?
+2. Why does the CSV writer put a `'` in front of a tag like `=SUM(A1)` but not in front of the number `-0.5`?
+3. The pipe table says "≈ 110.2 m, 24 · 66 %". What does each number mean, and which PRD rule decides "unreliable"?

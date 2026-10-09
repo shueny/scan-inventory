@@ -1,3 +1,4 @@
+import { Dashboard } from "./components/Dashboard";
 import { FilterPanel } from "./components/FilterPanel";
 import { InstanceDetail } from "./components/InstanceDetail";
 import { InventoryTable } from "./components/InventoryTable";
@@ -64,6 +65,7 @@ export function App() {
                     value: "queue",
                     label: `Review queue${openCount !== undefined ? ` (${openCount})` : ""}`,
                   },
+                  { value: "dashboard", label: "Dashboard" },
                 ]}
                 selected={bottomTab}
                 onSelect={setBottomTab}
@@ -85,7 +87,15 @@ export function App() {
                   classes={scan.data.classes}
                 />
               )}
-              {issues.isError && bottomTab === "queue" && (
+              {bottomTab === "dashboard" && scan.data && instances.data && issues.data && (
+                <Dashboard
+                  instances={instances.data}
+                  issues={issues.data}
+                  classes={scan.data.classes}
+                  zones={scan.data.zones}
+                />
+              )}
+              {issues.isError && bottomTab !== "inventory" && (
                 <p className="p-4 text-sm text-red-700">Could not load the review queue.</p>
               )}
             </div>

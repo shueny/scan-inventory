@@ -3,7 +3,7 @@ import { NO_FILTERS, type InstanceFilters, type Sort } from "../domain/filters";
 
 export type ColorMode = "class" | "rgb";
 /** What the panel under the 3D view shows. */
-export type BottomTab = "inventory" | "queue";
+export type BottomTab = "inventory" | "queue" | "dashboard";
 /** Which issues the review queue lists. */
 export type QueueView = "open" | "closed";
 

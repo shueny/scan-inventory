@@ -53,8 +53,8 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 | task | PRD "done when" | proof | status |
 |---|---|---|---|
 | harness | CI runs the gate on PRs; smoke test runs in CI | green CI on the harness PR | done (PR #4) |
-| T6 review queue | demo steps 6 and 7 work; every issue type from PRD 5.6 can be resolved | contract tests per resolution; e2e resolves an issue; browser check on real data | in review |
-| T7 dashboard + export | demo steps 8 and 9 work in both modes | unit tests for `domain/summary.ts`, `domain/exportCsv.ts`; e2e downloads the CSV (static); browser check in api mode | not started |
+| T6 review queue | demo steps 6 and 7 work; every issue type from PRD 5.6 can be resolved | contract tests per resolution; e2e resolves an issue; browser check on real data | done (PR #5) |
+| T7 dashboard + export | demo steps 8 and 9 work in both modes | unit tests for `domain/summary.ts`, `domain/exportCsv.ts`; e2e downloads the CSV (static); browser check in api mode | in review |
 | T8 polish + docs | fresh clone + README reproduces the demo; one Playwright smoke of the demo path; recorded performance numbers | README steps run from a clean clone; e2e covers the demo path | not started |
 | T9 demo deployment | demo mode UI (PRD 8.7); tiles on R2 under a versioned path; Pages deploy workflow; Range request returns 206; README links the demo | code + scripts merged; owner runs the account steps in `docs/DEPLOY.md` | not started |
 
@@ -94,3 +94,4 @@ None yet.
   AWS public mirror and tags it. 4 low (sleep after the last retry; focus moved on a refetch;
   a stale pick one step later; no negative focus test), all fixed with tests. No finding left
   open; merge only after CI is green on the fix.
+- 2026-10-09: T6 merged (PR #5, CI green on 2526a02). T7 built on branch `t7-dashboard`; ADR 0013.
