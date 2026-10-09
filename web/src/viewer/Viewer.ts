@@ -293,11 +293,14 @@ export class Viewer {
       this.controls.update();
     }
     if (this.cloud) {
-      this.stats.visiblePoints = this.potree.updatePointClouds(
+      const { visibleNodes } = this.potree.updatePointClouds(
         [this.cloud],
         this.camera,
         this.renderer,
-      ).numVisiblePoints;
+      );
+      // Points of loaded nodes only: the loader's numVisiblePoints also counts nodes whose
+      // data has not arrived (or failed), so it is not proof that anything is drawn.
+      this.stats.visiblePoints = visibleNodes.reduce((sum, node) => sum + node.numPoints, 0);
     }
     this.renderer.render(this.scene, this.camera);
     this.reportStats(now);

@@ -19,10 +19,13 @@ rule 6), so anything that runs in CI needs its own data.
   on `ubuntu-latest` (Docker is available there, so the testcontainers-based API tests and the
   contract tests run unchanged). No secrets.
 - **Fixture plant for the browser test**: `scripts/build_e2e_fixtures.py` turns the API's test
-  objects (6 objects, 5 issues) into scan `nora` with 18,000 synthetic points inside the object
-  boxes and converts them with PotreeConverter. The output (`web/e2e/fixtures/data/`, about
-  390 KB) is committed: it is generated test data, not scan data. The smoke test runs the
-  production build in static mode on it (`SCAN_DATA_DIR`), with Chromium's software WebGL.
+  objects (6 objects, 5 issues) into scan `nora`, with as many synthetic points inside each
+  object's box as its `point_count` (6,021 in total), and converts them with PotreeConverter.
+  The output (`web/e2e/fixtures/data/`, about 140 KB) is committed: it is generated test data,
+  not scan data. The smoke test runs the production build in static mode on it
+  (`SCAN_DATA_DIR`), with Chromium's software WebGL. Every test fails on any page or console
+  error, failed request or HTTP error, and the first one requires points that are actually
+  drawn (the `?stats` overlay counts only loaded octree nodes).
 - **Self-review loop**: a fresh reviewer agent with `docs/harness/review-brief.md`; findings are
   verified before fixing, fixed with a test where possible, the gate re-runs, at most 3 rounds,
   every round recorded in the PR.
@@ -37,7 +40,10 @@ rule 6), so anything that runs in CI needs its own data.
 
 - `make check` and CI need Docker; the smoke test needs a Playwright browser
   (`pnpm --dir web exec playwright install chromium`).
-- When the API fixtures change, `make e2e-fixtures` must be re-run (it needs PotreeConverter),
-  or the smoke test runs on stale data.
-- The smoke test proves the UI path on 6 objects, not performance on 151.9M points; the browser
-  check on the real data stays part of the gate.
+- When the API fixtures change, `make e2e-fixtures` must be re-run (it needs PotreeConverter);
+  `scripts/tests/test_build_e2e_fixtures.py` fails until it is (JSON and tile point counts).
+- The smoke test proves the UI path on 6 objects in static mode, not tile streaming (the
+  fixture octree is too small to have levels of detail), api mode, or performance on 151.9M
+  points; the contract tests and the browser check on the real data cover those.
+- CI pins each action to a major version, except `astral-sh/setup-uv`, which publishes only
+  full versions (`v10.2.0`).

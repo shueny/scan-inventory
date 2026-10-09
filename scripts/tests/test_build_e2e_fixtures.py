@@ -15,3 +15,18 @@ def test_fixture_point_count_is_the_sum_of_the_objects() -> None:
     objects = files["instances.json"]["instances"]
     assert files["scan.json"]["point_count"] == sum(i["point_count"] for i in objects)
     assert {i["scan_id"] for i in objects} == {"nora"}
+
+
+def test_committed_tiles_hold_the_objects_points() -> None:
+    """The tiles were built from the same objects: same total and same points per class."""
+    files = derive_json()
+    meta = json.loads((OUT / "potree" / "nora" / "metadata.json").read_text())
+    assert meta["points"] == files["scan.json"]["point_count"]
+
+    per_class: dict[int, int] = {}
+    for i in files["instances.json"]["instances"]:
+        per_class[i["class_id"]] = per_class.get(i["class_id"], 0) + i["point_count"]
+    classification = next(a for a in meta["attributes"] if a["name"] == "classification")
+    histogram = classification["histogram"]
+    assert {c: histogram[c] for c in per_class} == per_class
+    assert sum(histogram) == meta["points"]

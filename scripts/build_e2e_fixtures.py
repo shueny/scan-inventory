@@ -124,9 +124,15 @@ def main() -> None:
         for name, data in files.items():
             (staging / name).write_text(json_text(data), encoding="utf-8")
 
-        shutil.rmtree(OUT, ignore_errors=True)
+        # Copy next to the old fixtures first, then swap with two renames.
         OUT.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(staging, OUT)
+        new, old = OUT.with_name("data.new"), OUT.with_name("data.old")
+        shutil.rmtree(new, ignore_errors=True)
+        shutil.copytree(staging, new)
+        if OUT.exists():
+            OUT.rename(old)
+        new.rename(OUT)
+        shutil.rmtree(old, ignore_errors=True)
 
     size = sum(f.stat().st_size for f in OUT.rglob("*") if f.is_file())
     points = files["scan.json"]["point_count"]

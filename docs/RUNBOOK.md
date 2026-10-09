@@ -32,7 +32,8 @@ The code is not trusted because its author wrote it. Before merging, each task g
    Wrong findings are marked "rejected" with the reason; nothing is fixed on faith.
 3. **Fix.** Every confirmed high and medium finding is fixed, with a test that fails without
    the fix where the finding is testable. Low findings are fixed when cheap, else listed.
-4. **Re-run the gate** (steps 1 to 5 above), then start the next review round on the new diff.
+4. **Re-run the gate** (steps 1 to 5 above), push, and wait for CI on the pushed commit; a round
+   is closed only when CI is green. Then start the next review round on the new diff.
 5. **Stop** when a round finds no confirmed high or medium finding, or after 3 rounds; in the
    second case the open findings go to the owner in the PR instead of being merged silently.
 
@@ -66,3 +67,7 @@ None yet.
 - 2026-10-09: runbook created on branch `harness`; ADR 0011.
 - 2026-10-09: harness review round 1: 0 high, 2 medium (smoke passed with a broken point cloud;
   errors only checked in one test), 8 low. Both mediums confirmed and fixed, 7 lows fixed, 1 noted.
+- 2026-10-09: harness review round 2: 1 high (CI could not start: `setup-uv@v10` has no major
+  tag; round 1 had been logged as done before CI was green), 1 medium (points overlay counted
+  nodes not yet loaded), 6 low. All confirmed and fixed. Lesson for the loop: a round is only
+  closed when CI on the pushed fix is green, not when the local gate is.

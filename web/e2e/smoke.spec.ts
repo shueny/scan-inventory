@@ -15,7 +15,11 @@ const test = base.extend<{ problems: string[] }>({
       page.on("console", (m) => {
         if (m.type() === "error") problems.push(`console error: ${m.text()}`);
       });
-      page.on("requestfailed", (r) => problems.push(`request failed: ${r.url()}`));
+      page.on("requestfailed", (r) => {
+        const why = r.failure()?.errorText ?? "";
+        // A fetch cancelled by a navigation or reload is not a failure.
+        if (why !== "net::ERR_ABORTED") problems.push(`request failed (${why}): ${r.url()}`);
+      });
       page.on("response", (r) => {
         if (r.status() >= 400) problems.push(`HTTP ${r.status()}: ${r.url()}`);
       });
