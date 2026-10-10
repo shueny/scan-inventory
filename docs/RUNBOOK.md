@@ -56,7 +56,7 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 | T6 review queue | demo steps 6 and 7 work; every issue type from PRD 5.6 can be resolved | contract tests per resolution; e2e resolves an issue; browser check on real data | done (PR #5) |
 | T7 dashboard + export | demo steps 8 and 9 work in both modes | unit tests for `domain/summary.ts`, `domain/exportCsv.ts`; e2e downloads the CSV (static); browser check in api mode | done (PR #6) |
 | T8 polish + docs | fresh clone + README reproduces the demo; one Playwright smoke of the demo path; recorded performance numbers | README steps run from a clean clone; e2e covers the demo path | done (PR #7) |
-| T9 demo deployment | demo mode UI (PRD 8.7); tiles on R2 under a versioned path; Pages deploy workflow; Range request returns 206; README links the demo | code + scripts merged; demo stack e2e (wrangler pages dev + local R2); owner runs the account steps in `docs/DEPLOY.md` | in progress |
+| T9 demo deployment | demo mode UI (PRD 8.7); tiles on R2 under a versioned path; Pages deploy workflow; Range request returns 206; README links the demo | code + scripts merged; demo stack e2e (wrangler pages dev + local R2); owner runs the account steps in `docs/DEPLOY.md` | code merged (PR #8); live checks wait for the owner's steps (DEPLOY 0 to 10) |
 
 ## Owner-only steps (collected here as they come up)
 
@@ -172,3 +172,6 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
   done-when checks were missing from the owner's list; Shift+Tab could leave About when the
   dialog box itself had focus), 3 low. All fixed with tests; as this was the last round, the
   fixes were checked by the gate and CI, not by a fourth review.
+- 2026-10-10: T9 code merged (PR #8, CI green on aacfcd1). The run T6 to T9 is finished on the
+  code side. Left for the owner: the steps in docs/DEPLOY.md (step 10 holds the live T9 checks)
+  and the proposed ADRs 0012 to 0015.
