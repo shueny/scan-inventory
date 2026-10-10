@@ -6,3 +6,4 @@ e2e/.dist
 e2e/fixtures/data
 playwright-report
 test-results
+.wrangler

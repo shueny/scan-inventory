@@ -175,6 +175,10 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
   and the proposed ADRs 0012 to 0015.
 - 2026-10-10: owner accepted ADR 0015 and decided the demo stays NORA only, with no upload, so it
   needs no hosted backend or paid storage.
+- 2026-10-10: owner ran DEPLOY steps 1 to 8: bucket, upload (7 files, sizes match), Pages project,
+  Access on both hostnames (one app, owner's email only), first deploy, GitHub secrets (deploy
+  workflow green). Step 9: video link set in web/.env.demo. ESLint and Prettier now ignore
+  web/.wrangler (local deploys left a temporary Worker bundle there that broke `make gate`).
 - 2026-10-10: owner accepted ADRs 0012 (review queue), 0013 (dashboard and export: families,
   "SW - SE" as its own zone, rejected objects left out of the numbers) and 0014 (compose web
   service).

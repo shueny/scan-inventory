@@ -12,6 +12,8 @@ export default tseslint.config(
       "e2e/.dist",
       "playwright-report",
       "test-results",
+      // Wrangler's local state and temporary Worker bundles (wrangler pages dev / deploy).
+      ".wrangler",
     ],
   },
   js.configs.recommended,
