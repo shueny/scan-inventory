@@ -73,6 +73,9 @@ jobs:
       - name: Smoke test (Playwright)
         run: pnpm --dir web test:e2e
 
+      - name: Smoke test on the demo stack (wrangler pages dev + local R2)
+        run: pnpm --dir web test:e2e:demo
+
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v7

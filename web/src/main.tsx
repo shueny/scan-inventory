@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { ScreenGate } from "./components/ScreenGate";
 import { createDataSource } from "./data/createDataSource";
 import { DataSourceProvider } from "./data/DataSourceProvider";
 import "./index.css";
@@ -17,7 +18,9 @@ createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <DataSourceProvider source={createDataSource()}>
-        <App />
+        <ScreenGate>
+          <App />
+        </ScreenGate>
       </DataSourceProvider>
     </QueryClientProvider>
   </StrictMode>,

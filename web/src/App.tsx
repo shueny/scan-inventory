@@ -1,9 +1,13 @@
+import { useState } from "react";
+import { AboutPanel } from "./components/AboutPanel";
 import { Dashboard } from "./components/Dashboard";
+import { DemoBanner } from "./components/DemoBanner";
 import { FilterPanel } from "./components/FilterPanel";
 import { InstanceDetail } from "./components/InstanceDetail";
 import { InventoryTable } from "./components/InventoryTable";
 import { ReviewQueue } from "./components/ReviewQueue";
 import { panelId, tabId, Tabs } from "./components/Tabs";
+import { IS_DEMO } from "./config";
 import { useInstance, useInstances, useIssues, useScan } from "./data/hooks";
 import { isOpen } from "./domain/issues";
 import { useViewStore } from "./state/viewStore";
@@ -19,18 +23,30 @@ export function App() {
   const openCount = issues.data?.filter(isOpen).length;
   const selectedId = useViewStore((s) => s.selectedId);
   const selected = useInstance(selectedId);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   return (
     <div className="grid h-full grid-rows-[auto_1fr_auto]">
-      <header className="flex items-baseline gap-3 border-b border-line bg-panel px-4 py-2.5">
-        <h1 className="text-base font-semibold">scan-inventory</h1>
-        {scan.data && (
-          <p className="text-sm text-muted">
-            {scan.data.name} · {scan.data.instance_count} objects ·{" "}
-            {(scan.data.point_count / 1e6).toFixed(1)}M points
-          </p>
-        )}
-      </header>
+      <div>
+        <header className="flex items-baseline gap-3 border-b border-line bg-panel px-4 py-2.5">
+          <h1 className="text-base font-semibold">scan-inventory</h1>
+          {scan.data && (
+            <p className="text-sm text-muted">
+              {scan.data.name} · {scan.data.instance_count} objects ·{" "}
+              {(scan.data.point_count / 1e6).toFixed(1)}M points
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => setAboutOpen(true)}
+            className="ml-auto rounded-md border border-line px-2.5 py-1 text-sm hover:bg-canvas"
+          >
+            About
+          </button>
+        </header>
+        {IS_DEMO && <DemoBanner />}
+      </div>
+      {aboutOpen && <AboutPanel onClose={() => setAboutOpen(false)} />}
 
       <main className="grid min-h-0 grid-cols-[17rem_1fr_21rem]">
         <aside className="overflow-y-auto border-r border-line bg-panel p-4">

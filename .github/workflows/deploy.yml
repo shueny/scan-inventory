@@ -1,0 +1,64 @@
+# Deploy the public demo to Cloudflare Pages on every push to main (PRD 9, T9; ADR 0015).
+# Builds the static demo (web/.env.demo) and uploads it with the Pages Function that serves
+# the data from R2. The data itself is uploaded by hand (scripts/deploy/upload_demo_data.sh),
+# never by CI. Needs two repository secrets, set by the owner (docs/DEPLOY.md step 6):
+#   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+# Until they exist, the deploy step is skipped and the job stays green.
+name: Deploy demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-demo
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HAS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+    steps:
+      - name: Skip when Cloudflare is not set up yet
+        if: env.HAS_TOKEN != 'true'
+        run: echo "::notice::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set; deploy skipped (docs/DEPLOY.md)."
+
+      - uses: actions/checkout@v7
+        if: env.HAS_TOKEN == 'true'
+
+      - uses: pnpm/action-setup@v6
+        if: env.HAS_TOKEN == 'true'
+        with:
+          package_json_file: web/package.json
+
+      - uses: actions/setup-node@v7
+        if: env.HAS_TOKEN == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Build the demo
+        if: env.HAS_TOKEN == 'true'
+        run: |
+          pnpm --dir web install --frozen-lockfile
+          pnpm --dir web build:demo
+
+      - name: Deploy to Cloudflare Pages
+        if: env.HAS_TOKEN == 'true'
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: web
+          packageManager: pnpm
+          wranglerVersion: "4.141.0"
+          command: pages deploy dist --project-name=scan-inventory --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

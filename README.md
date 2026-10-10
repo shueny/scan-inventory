@@ -11,6 +11,20 @@ It is a portfolio project. It shows three things:
 
 The full specification is [docs/PRD.md](docs/PRD.md). Every decision is in [docs/adr/](docs/adr/), and every task is explained in [docs/LEARNING.md](docs/LEARNING.md).
 
+## Live demo
+
+The demo runs on Cloudflare Pages with a 13 % sample of the scan (about 20M points), and access is by invitation (Cloudflare Access). In the demo, your review changes are saved only in your own browser. *The address goes here once the owner has finished [docs/DEPLOY.md](docs/DEPLOY.md).*
+
+A video of the demo path (83 s) is recorded with `pnpm --dir web demo:record` and served with the demo data.
+
+![The scan coloured by class, with filters, the inventory and the 3D view](docs/img/01-overview.jpg)
+
+| an object, selected in the table | the review queue |
+|---|---|
+| ![PCV-104B selected: its box in 3D and its details](docs/img/02-object.jpg) | ![The safety-valve mismatch with its suggested class](docs/img/03-review-queue.jpg) |
+
+![Dashboard: objects per zone and family, pipe length per zone, review progress](docs/img/04-dashboard.jpg)
+
 ## What you can do
 
 1. Open the scan. It streams in and is coloured by object class. Structure and floor can be shown in grey or hidden.
@@ -159,6 +173,7 @@ This runs:
 - tsc, eslint, prettier and Vitest for `web/`.
 - The data source contract tests against the real API.
 - A Playwright smoke test of demo steps 3 to 9 (including clicking an object in 3D), on a small synthetic plant committed in `web/e2e/fixtures/`.
+- The same smoke tests against the demo stack: the demo build under `wrangler pages dev` (the Cloudflare runtime), with the plant in a local R2 bucket.
 - pre-commit.
 
 CI runs the same steps on every pull request. The process is in [docs/RUNBOOK.md](docs/RUNBOOK.md).
@@ -185,7 +200,7 @@ Measured on 2026-10-10 on a MacBook Air M3 (24 GB) with an external 144 Hz displ
 - **Filtering doesn't dim objects in 3D:** the loader cannot dim single objects, so the 3D view outlines the objects that pass instead ([ADR 0010](docs/adr/0010-data-sources-contract-and-panels.md)).
 - **Pipe lengths are rough:** they are PCA estimates and wrong for bent or branched pipes. The dashboard shows the unreliable share.
 - **Tag assignment and "tag missing" issues aren't linked:** assigning a P&ID tag does not close that tag's "missing" issue ([ADR 0012](docs/adr/0012-review-queue.md)).
-- **No public demo yet:** it is task T9 (Cloudflare Pages + R2, behind Cloudflare Access).
+- **The demo is invitation-only:** it runs behind Cloudflare Access. Every tile read is a Function request, and the free plan allows 100,000 a day ([ADR 0015](docs/adr/0015-demo-hosting-cloudflare.md)).
 - **Desktop only:** mobile is out of scope.
 
 ## Data and licence

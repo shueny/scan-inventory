@@ -1,0 +1,11 @@
+# Cloudflare Pages project for the public demo (ADR 0015, docs/DEPLOY.md).
+# With pages_build_output_dir set, `wrangler pages deploy` applies this file: it is the
+# source of truth for the project's settings and bindings.
+name = "scan-inventory"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-09-26"
+
+# The private bucket with the demo's tiles and JSON, read by functions/r2/[[path]].ts.
+[[r2_buckets]]
+binding = "DEMO_DATA"
+bucket_name = "scan-inventory-demo"

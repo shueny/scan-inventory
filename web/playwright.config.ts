@@ -13,6 +13,10 @@ const env = [
   "VITE_TILES_BASE_URL=/data/potree/nora",
 ].join(" ");
 
+// E2E_BASE_URL runs the same tests against an app that is already running, e.g. the demo
+// build under `wrangler pages dev` with the fixture plant in local R2 (pnpm test:e2e:demo).
+const external = process.env.E2E_BASE_URL;
+
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: false,
@@ -21,7 +25,7 @@ export default defineConfig({
   retries: 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: external ?? `http://localhost:${PORT}`,
     viewport: { width: 1440, height: 900 },
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
@@ -38,10 +42,12 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: `${env} vite build --outDir e2e/.dist && ${env} vite preview --outDir e2e/.dist --port ${PORT} --strictPort`,
-    url: `http://localhost:${PORT}`,
-    reuseExistingServer: false,
-    timeout: 120_000,
-  },
+  webServer: external
+    ? undefined
+    : {
+        command: `${env} vite build --outDir e2e/.dist && ${env} vite preview --outDir e2e/.dist --port ${PORT} --strictPort`,
+        url: `http://localhost:${PORT}`,
+        reuseExistingServer: false,
+        timeout: 120_000,
+      },
 });

@@ -329,3 +329,48 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 1. You open the app and the plant looks coarse until you zoom in. Is that a bug? What decides which tiles are loaded?
 2. Why does the web container proxy `/api` instead of the browser calling the API on port 8000 directly?
 3. The report gives "median 6.9 ms, worst 8.8 ms" for every view. What do these numbers prove about the PRD target, and what can they not tell you?
+
+---
+
+## T9 · Public demo deployment
+
+### What was built
+
+- **Demo mode** (PRD 8.7):
+  - a banner saying review changes are saved only in this browser, with "Reset demo" (asks first);
+  - a notice when browser storage is blocked;
+  - a loading overlay until the first points are drawn;
+  - a WebGL 2 check with a screenshot;
+  - a small-screen notice with "Continue anyway";
+  - an About panel (framing, architecture, repository, dataset credit);
+  - review changes kept per data version (`VITE_DATA_VERSION`).
+- **Cloudflare** ([ADR 0015](adr/0015-demo-hosting-cloudflare.md)):
+  - a Pages Function (`web/functions/r2/[[path]].ts`) serves the demo's tiles and JSON from a private R2 bucket at `/r2/...`;
+  - Range handling, unit-tested, is in `web/cloudflare/r2Response.ts`: 206 with Content-Range, 416, 304, 404, GET/HEAD only, no `..`;
+  - `_routes.json` sends only `/r2/*` to the Function;
+  - `wrangler.toml` binds the bucket;
+  - the demo build settings are in `web/.env.demo`.
+- **The demo stack, tested locally**: `pnpm --dir web test:e2e:demo` builds the demo, puts the fixture plant into a local R2 bucket, starts `wrangler pages dev` (the Cloudflare runtime) and runs the full smoke suite against it. It is part of `make gate` and CI.
+- **Owner tools**:
+  - `scripts/deploy/upload_demo_data.sh` uploads with rclone in 100 MB parts;
+  - `.github/workflows/deploy.yml` deploys on every push to `main` once the two secrets exist (until then it skips itself);
+  - `docs/DEPLOY.md` lists every step that needs the owner's Cloudflare login;
+  - `pnpm --dir web demo:record` records the README screenshots and the demo video.
+
+### Key concepts
+
+- **One origin behind one door**: the site and its data are on the same address, and Cloudflare Access checks every request (pages and tile ranges) before anything runs. Without a custom domain, a bucket's public address could not be protected, so the data goes through the site.
+- **A Function as a small file server**: it reads the object from R2 with the request's Range header and answers with exactly the bytes asked for, plus the headers the loader needs (`206`, `Content-Range`). The logic is a pure function, so it is tested without Cloudflare.
+- **Static vs dynamic requests**: the app's files are free static assets; only `/r2/*` costs a Function request (100,000 a day on the free plan). `_routes.json` draws that line.
+- **Versioned data**: everything lives under `v1/`. New data goes to `v2/`; visitors' saved review changes belong to a version and never mix with other data.
+- **Secrets stay outside**: the repo has the build settings (all public anyway) but no token. The owner puts tokens into rclone, the wrangler login and GitHub secrets.
+
+### Why this way
+
+[ADR 0015](adr/0015-demo-hosting-cloudflare.md) (proposed): Pages + private R2 through a Function, behind Access; deploy by CI, data by hand.
+
+### Quiz
+
+1. A visitor's browser asks for `/r2/v1/potree/nora/octree.bin` with `Range: bytes=1000-1999`. Follow the request: what checks it, what runs, and what comes back (status and headers)?
+2. Why could the tiles not simply stay in a public R2 bucket, as the PRD first planned, once only invited people should see the demo?
+3. You upload a corrected `instances.json`. Why should it go under `v2/`, and what happens to the review changes a visitor made on `v1`?

@@ -56,11 +56,17 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 | T6 review queue | demo steps 6 and 7 work; every issue type from PRD 5.6 can be resolved | contract tests per resolution; e2e resolves an issue; browser check on real data | done (PR #5) |
 | T7 dashboard + export | demo steps 8 and 9 work in both modes | unit tests for `domain/summary.ts`, `domain/exportCsv.ts`; e2e downloads the CSV (static); browser check in api mode | done (PR #6) |
 | T8 polish + docs | fresh clone + README reproduces the demo; one Playwright smoke of the demo path; recorded performance numbers | README steps run from a clean clone; e2e covers the demo path | done (PR #7) |
-| T9 demo deployment | demo mode UI (PRD 8.7); tiles on R2 under a versioned path; Pages deploy workflow; Range request returns 206; README links the demo | code + scripts merged; owner runs the account steps in `docs/DEPLOY.md` | not started |
+| T9 demo deployment | demo mode UI (PRD 8.7); tiles on R2 under a versioned path; Pages deploy workflow; Range request returns 206; README links the demo | code + scripts merged; demo stack e2e (wrangler pages dev + local R2); owner runs the account steps in `docs/DEPLOY.md` | in progress |
 
 ## Owner-only steps (collected here as they come up)
 
-None yet.
+- T9: everything in [docs/DEPLOY.md](DEPLOY.md):
+  1. Cloudflare account, R2 bucket, R2 token and rclone remote.
+  2. Upload the data.
+  3. Create the Pages project with `wrangler login`.
+  4. Add the GitHub secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+  5. Set up Zero Trust: One-time PIN and the two Access apps with the invited emails.
+  6. Add the live address to the README.
 
 ## Proposals for the owner (not done; no silent scope growth)
 
@@ -138,3 +144,6 @@ None yet.
 - 2026-10-10: T8 review round 3 (last): CI green on fae7a44, 0 high, 0 medium, 4 low (perf
   script argument with pnpm's "--", gzip level, a point count wording, load-time precision).
   All fixed. Loop closed.
+- 2026-10-10: T8 merged (PR #7, CI green on 4a2f683). T9 on branch `t9-demo`: demo mode UI,
+  Pages Function for R2 with Range (ADR 0015), demo-stack e2e under wrangler pages dev (8/8),
+  upload script, deploy workflow (skips until secrets exist), docs/DEPLOY.md, recording script.

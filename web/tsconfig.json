@@ -16,5 +16,12 @@
     "noEmit": true,
     "types": ["vite/client", "vitest/globals"]
   },
-  "include": ["src", "e2e", "vite.config.ts", "vitest.contract.config.ts", "playwright.config.ts"]
+  "include": [
+    "src",
+    "e2e",
+    "cloudflare",
+    "vite.config.ts",
+    "vitest.contract.config.ts",
+    "playwright.config.ts"
+  ]
 }

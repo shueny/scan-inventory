@@ -14,6 +14,8 @@ nora_report.txt
 .env
 .env.*
 !.env.example
+# The public demo build settings (no secrets; ADR 0015)
+!web/.env.demo
 
 # --- Python ---
 .venv/

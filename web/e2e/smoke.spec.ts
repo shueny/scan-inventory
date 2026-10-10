@@ -189,3 +189,24 @@ test("demo step 4: clicking an object in 3D selects exactly that object, by GPU 
   // The same object is selected in the table.
   await expect(table(page).getByRole("row", { selected: true })).toContainText("Pipe");
 });
+
+test("demo mode: the banner says where changes go, and Reset demo forgets them", async ({
+  page,
+}) => {
+  await open(page);
+  const banner = page.getByRole("region", { name: "Demo mode" });
+  await expect(banner).toContainText("saved only in this browser");
+
+  await table(page).getByText("PSV-1").click();
+  await page
+    .getByRole("article")
+    .getByRole("button", { name: /Confirm/ })
+    .click();
+  await expect(table(page).getByRole("row", { name: /PSV-1/ })).toContainText("Confirmed");
+
+  await banner.getByRole("button", { name: "Reset demo" }).click();
+  await banner.getByRole("button", { name: "Yes, reset" }).click();
+  await expect(table(page).getByRole("row", { name: /PSV-1/ })).toContainText("Unreviewed");
+  await page.reload();
+  await expect(table(page).getByRole("row", { name: /PSV-1/ })).toContainText("Unreviewed");
+});

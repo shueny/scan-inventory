@@ -88,7 +88,14 @@ export function ViewerCanvas() {
     <div className="relative h-full w-full">
       <div ref={container} className="absolute inset-0" data-testid="viewer" />
 
-      {loadState === "loading" && <Overlay>Loading the scan…</Overlay>}
+      {/* Until the first points are drawn, not only until the metadata arrived (PRD 8.7). */}
+      {(loadState === "loading" ||
+        (loadState === "ready" && !(stats && stats.visiblePoints > 0))) && (
+        <Overlay>
+          Loading the scan…
+          {stats && stats.visiblePoints > 0 && ` ${stats.visiblePoints.toLocaleString()} points`}
+        </Overlay>
+      )}
       {loadState === "error" && (
         <Overlay>
           The point cloud could not be loaded. Check that the tiles exist at{" "}

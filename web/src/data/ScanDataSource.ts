@@ -26,6 +26,8 @@ export interface ScanDataSource {
   resolveIssue(scanId: string, issueId: string, resolution: Resolution): Promise<ResolveResult>;
   /** Demo only: forget every change made in this browser. */
   resetDemo?(): Promise<void>;
+  /** Demo only: false when browser storage is blocked and changes last for this page only. */
+  isPersistent?(scanId: string): boolean;
 }
 
 // The same three errors as the API (HTTP 404, 422, 409), so the UI handles both modes alike.

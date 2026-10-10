@@ -1,5 +1,5 @@
 # One command for the quality gate (PRD section 12): `make check`.
-.PHONY: install check check-scripts check-api check-web types e2e gate e2e-fixtures
+.PHONY: install check check-scripts check-api check-web types e2e e2e-demo gate e2e-fixtures
 
 install:
 	cd scripts && uv sync
@@ -29,8 +29,12 @@ types:
 e2e:
 	pnpm --dir web test:e2e
 
+# The same smoke tests against the public demo stack (wrangler pages dev + local R2).
+e2e-demo:
+	pnpm --dir web test:e2e:demo
+
 # The whole gate before a merge (docs/RUNBOOK.md); CI runs the same steps.
-gate: check e2e
+gate: check e2e e2e-demo
 	uvx pre-commit run --all-files
 
 # Rebuild the fixture plant for the smoke test (needs PotreeConverter).
