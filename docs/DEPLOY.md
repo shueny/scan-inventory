@@ -57,7 +57,7 @@ scripts/deploy/upload_demo_data.sh --dry-run   # shows what would be copied
 scripts/deploy/upload_demo_data.sh
 ```
 
-This uploads about 400 MB under `v1/`: `v1/potree/nora/` (metadata, hierarchy, octree), `v1/data/` (the three JSON files), and `v1/media/demo.webm` (the demo video, step 9). The 395 MB `octree.bin` goes up in 100 MB parts. Nobody can read the bucket yet: it is private, and the site that reads it comes in step 7.
+This uploads about 400 MB under `v1/` (rclone's `--checksum` may upload `octree.bin` again on a re-run, because R2 gives multipart uploads a different kind of checksum; that costs time, nothing else): `v1/potree/nora/` (metadata, hierarchy, octree), `v1/data/` (the three JSON files), and `v1/media/demo.webm` (the demo video, step 9). The 395 MB `octree.bin` goes up in 100 MB parts. Nobody can read the bucket yet: it is private, and the site that reads it comes in step 7.
 
 ## 5. Create the Pages project (no deploy yet)
 
@@ -73,10 +73,10 @@ Nothing is online yet. Set up Access first (step 6), so the demo and its data ar
 
 1. Open **Zero Trust** in the dashboard. The first time, choose a team name and the **Free** plan (up to 50 users).
 2. Go to **Integrations** > **Identity providers** > **Add** > **One-time PIN**. Invited people then get a code by email; they need no account.
-3. Go to **Workers & Pages** > `scan-inventory` > **Settings** > **General** > **Enable access policy**. This creates an Access application, but by default it only protects the *preview* addresses.
+3. Go to **Workers & Pages** > `scan-inventory` > **Settings** > **General** > **Enable access policy**. This creates an Access application, but by default it only protects the *preview* addresses. If the switch is not there for a project that has no deployment yet, create the application by hand instead: **Zero Trust** > **Access** > **Applications** > **Add an application** > **Self-hosted**, with the domain `scan-inventory.pages.dev`, then add a second one for `*.scan-inventory.pages.dev`.
 4. To protect the main address too:
    1. Go to **Zero Trust** > **Access** > **Applications**, open the application that was just created, and click **Configure**.
-   2. In the public hostname, remove the `*.` wildcard from the subdomain, so it reads `scan-inventory.pages.dev`, and save.
+   2. In the public hostname, remove the `*.` wildcard from the subdomain, so it reads `scan-inventory.pages.dev`, and save. If saving fails, give the application a new name, then save again.
    3. Go back to step 3 and enable the access policy again.
 
    You end up with two applications: `scan-inventory.pages.dev` and `*.scan-inventory.pages.dev`. Cloudflare documents this under "Known issues" > "Enable Access on your `*.pages.dev` domain".
@@ -95,6 +95,7 @@ Check it:
 1. In a private browser window, open the address. It should ask for an email. Enter an invited address and the code you receive, and the app should load.
 2. Open the address with an address that is not invited: you should not get in.
 3. In DevTools > Network, filter for `octree.bin`. The requests should show status **206**. If they show 404, the upload (step 4) or the bucket name is wrong.
+4. In the DevTools console, ask for a range that runs past the end: `fetch("/r2/v1/potree/nora/octree.bin", { headers: { Range: "bytes=414688600-414689000" } }).then((r) => console.log(r.status, r.headers.get("content-range")))`. Expect `206` and `bytes 414688600-414688616/414688617`. The local tests check this on Cloudflare's local runtime; this checks it on the real R2.
 
 ## 8. Let GitHub deploy on every push to main
 

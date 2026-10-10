@@ -48,6 +48,19 @@ test("ETag revalidation, unknown keys, other methods", async ({ request }) => {
   const again = await request.get("/r2/v1/data/scan.json", { headers: { "If-None-Match": etag } });
   expect(again.status()).toBe(304);
 
+  // With a Range: a matching ETag still means "not modified", a stale one gets the slice.
+  const OCT = "/r2/v1/potree/nora/octree.bin";
+  const octEtag = (await request.head(OCT)).headers()["etag"] ?? "";
+  const same = await request.get(OCT, {
+    headers: { Range: "bytes=0-9", "If-None-Match": octEtag },
+  });
+  expect(same.status()).toBe(304);
+  const stale = await request.get(OCT, {
+    headers: { Range: "bytes=0-9", "If-None-Match": '"old"' },
+  });
+  expect(stale.status()).toBe(206);
+  expect((await stale.body()).length).toBe(10);
+
   expect((await request.get("/r2/v1/nope.json")).status()).toBe(404);
   expect((await request.get("/r2/")).status()).toBe(404);
   expect((await request.post("/r2/v1/data/scan.json")).status()).toBe(405);

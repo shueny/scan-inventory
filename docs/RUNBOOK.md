@@ -159,3 +159,10 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
   Content-Range from R2's answer, with 416/304/404/405 and HTTP tests on the Cloudflare runtime
   (11/11); DEPLOY reordered (Access before the first deploy); focus trap and restore; diagram;
   About text per mode; banner focus and error state; .wrangler/ ignored.
+- 2026-10-10: T9 review round 2: CI green on 3f20d17, 0 high, 4 medium (any R2 error on a ranged
+  read became 416; the loading clock restarted at step 2, so the slow notice could fail to show;
+  the seconds counter was inside a live region; About's focus trap leaked after a backdrop
+  click), 5 low. All fixed with tests: handler moved to cloudflare/r2Handler.ts and tested with
+  a stub bucket (416 only for a start past the end, other errors rethrown); overlay tested with
+  a fake viewer; document-level focus trap tested from outside; If-None-Match + Range HTTP
+  tests; DEPLOY notes (rename on error, manual Access app, live past-the-end check).

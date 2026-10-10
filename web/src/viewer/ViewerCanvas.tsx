@@ -91,31 +91,34 @@ export function ViewerCanvas() {
     viewer.current?.select(instance);
   }, [loadState, selectedId, instances.data]);
 
-  // Seconds spent loading, for the loading screen; stops once points are drawn.
+  // Seconds since the viewer started loading (one clock for both steps, review round 2);
+  // stops once points are drawn or loading failed.
+  const [loadStart] = useState(() => Date.now());
+  const loadingDone = firstPoints || loadState === "error";
   useEffect(() => {
-    if (firstPoints || loadState === "error") return;
-    const started = Date.now();
+    if (loadingDone) return;
     const timer = setInterval(
-      () => setLoadingSeconds(Math.round((Date.now() - started) / 1000)),
+      () => setLoadingSeconds(Math.round((Date.now() - loadStart) / 1000)),
       1000,
     );
     return () => clearInterval(timer);
-  }, [firstPoints, loadState]);
+  }, [loadingDone, loadStart]);
 
   return (
     <div className="relative h-full w-full">
       <div ref={container} className="absolute inset-0" data-testid="viewer" />
 
-      {/* Loading screen with progress (PRD 8.7): until the first points are drawn. */}
-      {loadState !== "error" && !firstPoints && (
+      {/* Loading screen with progress (PRD 8.7): until the first points are drawn. Only the
+          step is announced to screen readers; the seconds counter is visual only. */}
+      {!loadingDone && (
         <Overlay>
           <span role="status">
             Loading the scan… step{" "}
             {loadState === "loading" ? "1 of 2: tile index" : "2 of 2: first points"}
-            {loadingSeconds > 0 && ` (${loadingSeconds} s)`}
           </span>
+          {loadingSeconds > 0 && <span aria-hidden> ({loadingSeconds} s)</span>}
           {loadingSeconds >= 20 && (
-            <span className="mt-2 block">
+            <span role="status" className="mt-2 block">
               This is taking longer than usual: the connection may be slow, or the data could not be
               read.{" "}
               <button

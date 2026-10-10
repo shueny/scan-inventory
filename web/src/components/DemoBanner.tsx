@@ -68,7 +68,10 @@ export function DemoBanner() {
             <button
               ref={cancelButton}
               type="button"
-              onClick={() => setConfirming(false)}
+              onClick={() => {
+                setConfirming(false);
+                setFailed(false);
+              }}
               className="rounded px-2 py-0.5 underline"
             >
               Cancel

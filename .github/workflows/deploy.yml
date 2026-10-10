@@ -1,7 +1,7 @@
 # Deploy the public demo to Cloudflare Pages on every push to main (PRD 9, T9; ADR 0015).
 # Builds the static demo (web/.env.demo) and uploads it with the Pages Function that serves
 # the data from R2. The data itself is uploaded by hand (scripts/deploy/upload_demo_data.sh),
-# never by CI. Needs two repository secrets, set by the owner (docs/DEPLOY.md step 6):
+# never by CI. Needs two repository secrets, set by the owner (docs/DEPLOY.md step 8):
 #   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
 # Until they exist, the deploy step is skipped and the job stays green.
 name: Deploy demo

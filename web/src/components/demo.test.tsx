@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { DataSourceProvider } from "../data/DataSourceProvider";
@@ -143,7 +143,13 @@ describe("AboutPanel", () => {
     await user.tab({ shift: true });
     expect(dialog.contains(document.activeElement)).toBe(true);
 
-    await user.click(screen.getByRole("button", { name: "Close" }));
+    // Even when focus got outside (e.g. the page behind), Tab brings it back and Escape works.
+    act(() => screen.getByRole("button", { name: "About" }).focus());
+    await user.tab({ shift: true });
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.getByRole("button", { name: "About" })).toHaveFocus();
   });
 });

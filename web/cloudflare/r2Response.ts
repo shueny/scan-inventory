@@ -48,10 +48,16 @@ export function rangeRequest(header: string | null): R2RangeOption | null | "inv
   return { offset, length: end - offset + 1 };
 }
 
-/** First and last byte (inclusive) of what R2 returned, clamped to the object. */
-export function returnedRange(object: R2Like): { start: number; end: number } {
+/**
+ * First and last byte (inclusive) of what R2 returned, clamped to the object. When R2 does
+ * not report a range, the requested one is used (never "the whole object" for a slice).
+ */
+export function returnedRange(
+  object: R2Like,
+  requested: R2RangeOption | null = null,
+): { start: number; end: number } {
   const size = object.size;
-  const r = object.range ?? {};
+  const r: { offset?: number; length?: number; suffix?: number } = object.range ?? requested ?? {};
   if (r.suffix !== undefined) {
     const length = Math.min(r.suffix, size);
     return { start: size - length, end: size - 1 };
@@ -80,7 +86,7 @@ function baseHeaders(object: R2Like, cacheControl: string): Headers {
  */
 export function r2Response(
   object: R2Like | null,
-  request: { method: string; ranged: boolean },
+  request: { method: string; requested: R2RangeOption | null },
   cacheControl: string,
 ): Response {
   if (!object) return new Response("Not found", { status: 404 });
@@ -89,8 +95,8 @@ export function r2Response(
 
   if (!head && !object.body) return new Response(null, { status: 304, headers });
 
-  if (request.ranged && !head) {
-    const { start, end } = returnedRange(object);
+  if (request.requested && !head) {
+    const { start, end } = returnedRange(object, request.requested);
     if (end < start) return notSatisfiable(object.size); // nothing left after the start
     headers.set("Content-Range", `bytes ${start}-${end}/${object.size}`);
     headers.set("Content-Length", String(end - start + 1));

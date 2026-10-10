@@ -60,10 +60,17 @@ describe("returnedRange", () => {
 
 describe("r2Response", () => {
   const cache = "private, max-age=86400";
-  const get = (ranged: boolean) => ({ method: "GET", ranged });
+  const get = (requested: { offset: number; length?: number } | null) => ({
+    method: "GET",
+    requested,
+  });
 
   it("answers a range with 206 and Content-Range from what R2 returned", () => {
-    const res = r2Response(object({ range: { offset: 100, length: 100 } }), get(true), cache);
+    const res = r2Response(
+      object({ range: { offset: 100, length: 100 } }),
+      get({ offset: 100, length: 100 }),
+      cache,
+    );
 
     expect(res.status).toBe(206);
     expect(res.headers.get("Content-Range")).toBe("bytes 100-199/1000");
@@ -74,32 +81,35 @@ describe("r2Response", () => {
     expect(res.headers.get("Content-Type")).toBe("application/octet-stream");
   });
 
-  it("answers bytes=0- with 206 even if R2 reports no range", () => {
-    const res = r2Response(object({ range: undefined }), get(true), cache);
-    expect(res.status).toBe(206);
-    expect(res.headers.get("Content-Range")).toBe("bytes 0-999/1000");
+  it("uses the requested range when R2 reports none (bytes=0- and a slice)", () => {
+    const whole = r2Response(object({ range: undefined }), get({ offset: 0 }), cache);
+    expect(whole.status).toBe(206);
+    expect(whole.headers.get("Content-Range")).toBe("bytes 0-999/1000");
+    const slice = r2Response(object({ range: undefined }), get({ offset: 10, length: 5 }), cache);
+    expect(slice.headers.get("Content-Range")).toBe("bytes 10-14/1000");
+    expect(slice.headers.get("Content-Length")).toBe("5");
   });
 
   it("answers 416 when nothing is left after the start", () => {
-    const res = r2Response(object({ range: { offset: 1000 } }), get(true), cache);
+    const res = r2Response(object({ range: { offset: 1000 } }), get({ offset: 1000 }), cache);
     expect(res.status).toBe(416);
     expect(res.headers.get("Content-Range")).toBe("bytes */1000");
   });
 
   it("answers 200 with the whole object without a range", () => {
-    const res = r2Response(object(), get(false), cache);
+    const res = r2Response(object(), get(null), cache);
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Length")).toBe("1000");
     expect(res.headers.has("Content-Range")).toBe(false);
   });
 
   it("answers 304 when R2 returned no body, 404 when the object is missing", () => {
-    expect(r2Response(object({ body: undefined }), get(false), cache).status).toBe(304);
-    expect(r2Response(null, get(false), cache).status).toBe(404);
+    expect(r2Response(object({ body: undefined }), get(null), cache).status).toBe(304);
+    expect(r2Response(null, get(null), cache).status).toBe(404);
   });
 
   it("answers HEAD with the headers and no body", async () => {
-    const res = r2Response(object(), { method: "HEAD", ranged: false }, cache);
+    const res = r2Response(object(), { method: "HEAD", requested: null }, cache);
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Length")).toBe("1000");
     expect(await res.text()).toBe("");
