@@ -130,3 +130,8 @@ None yet.
   now in `make install`, api healthcheck before web starts, performance re-measured uncapped.
   Lows: nginx re-resolves the api, 404 for missing assets, gzip, tiles revalidated, ports in
   .env.example, diagram link. Not changed: Dockerfile copies test files for tsc (works; noted).
+- 2026-10-10: T8 review round 2: CI green on 8e84974 (step 4 passed 15/15 repeats), 1 medium (the
+  vsync-off "~370 fps" claim measured frame scheduling, not the GPU, and the script was not
+  committed), 2 low. Fixed: `web/perf/measure-orbit.mjs` committed (`pnpm --dir web perf`),
+  README reports vsync-on frame times (144 Hz held, worst 8.8 ms, 0 frames over 33 ms) with
+  what they cannot show; index.html no-cache; e2e hook removed on unmount, pick method read-only.

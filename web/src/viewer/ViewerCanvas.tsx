@@ -53,6 +53,8 @@ export function ViewerCanvas() {
     return () => {
       v.dispose();
       viewer.current = null;
+      const w = window as unknown as { __scanViewer?: Viewer };
+      if (w.__scanViewer === v) delete w.__scanViewer;
     };
   }, []);
 

@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:contract": "vitest run --config vitest.contract.config.ts",
     "test:e2e": "playwright test",
+    "perf": "node perf/measure-orbit.mjs",
     "types": "openapi-typescript src/data/openapi.json --array-length -o src/data/api-schema.d.ts",
     "lint": "eslint .",
     "format": "prettier --write .",

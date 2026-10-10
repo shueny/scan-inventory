@@ -306,18 +306,18 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
   - the quality gate, performance numbers, known limitations and the dataset credit.
 - **A `web` service in docker compose** ([ADR 0014](adr/0014-compose-web-service.md)): nginx serves the app, passes `/api` to the API and serves the tiles with Range support. `docker compose up` then gives the whole demo at http://localhost:8088, as demo step 1 says. Ports can be changed in `.env`.
 - **A fresh-clone check**: the README steps were run in a new clone, with the 13 % sample tiles and a second compose stack on other ports, and the demo path was clicked through there.
-- **Performance numbers**, measured on the MacBook Air M3 in a visible Chromium window (Metal), with vsync off and every frame time recorded while orbiting:
-  - frame time median 0.5–1.9 ms and 95th percentile 2.7 ms, with up to 334k points drawn (PRD target: 33 ms);
-  - first points after 1.8–4.8 s;
+- **Performance numbers**, measured on the MacBook Air M3 with `web/perf/measure-orbit.mjs` (`pnpm --dir web perf`):
+  - while orbiting with up to 373k points drawn, it holds the 144 Hz display rate (median 6.9 ms, worst 8.8 ms, no frame over 33 ms);
+  - first points after 1.6–4.8 s;
   - JS bundle 508 KB gzipped.
-  The level-of-detail rule kept the points drawn at about 330k, so the 3M budget was never reached.
+  The level-of-detail rule kept the points drawn at about 370k, so the 3M budget was never reached.
 - The Playwright smoke test now covers demo steps 3 to 9 on the fixture plant, including clicking an object in 3D (step 4); it fails if picking is switched off.
 
 ### Key concepts
 
 - **Reproducibility is tested, not assumed**: a README is only right if someone (or a script) follows it from a clean clone. The check runs each step and records its exit code and duration.
 - **Level of detail**: the loader draws an octree node only when it would cover enough pixels. From far away the whole plant is the root node (13k points); zooming in fetches finer nodes with Range requests. Speed comes from not loading what you cannot see.
-- **Frame rate is capped by the display**: browsers draw at most once per screen refresh (144 Hz here). A steady 144 fps means "faster than needed", not "exactly this fast". To see the real cost, turn vsync off and record each frame's time; report the median and the 95th percentile, not a per-second average, which hides single slow frames.
+- **Frame rate is capped by the display**: browsers draw at most once per screen refresh (144 Hz here). A steady 144 fps means "faster than needed", not "exactly this fast". What the frame times can prove is "smooth or not": record every frame's time and report the median, the 99th percentile and the worst frame, not a per-second average, which hides single slow frames. With vsync off the numbers look faster, but they mostly measure how fast the browser schedules frames, not the GPU (review round 2 of T8).
 - **One origin**: when the app, the API and the tiles come from the same host and port, the browser applies no cross-origin rules, and the app code uses the same paths everywhere.
 
 ### Why this way
@@ -328,4 +328,4 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 
 1. You open the app and the plant looks coarse until you zoom in. Is that a bug? What decides which tiles are loaded?
 2. Why does the web container proxy `/api` instead of the browser calling the API on port 8000 directly?
-3. The first measurement read "144 fps" in every sample. Why was that number useless, and what did the second measurement change to find the real frame time?
+3. The report gives "median 6.9 ms, worst 8.8 ms" for every view. What do these numbers prove about the PRD target, and what can they not tell you?
