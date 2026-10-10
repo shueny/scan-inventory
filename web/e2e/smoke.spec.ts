@@ -35,8 +35,8 @@ const test = base.extend<{ problems: string[] }>({
 });
 
 /** Open the app and wait until points are actually drawn (the ?stats overlay counts them). */
-async function open(page: Page) {
-  await page.goto("/?stats");
+async function open(page: Page, url = "/?stats") {
+  await page.goto(url);
   await expect(page.getByText("E2E fixture plant")).toBeVisible();
   await expect(page.getByText("Loading the scan…")).toBeHidden({ timeout: 30_000 });
   await expect(page.getByText(/could not be loaded/)).toBeHidden();
@@ -159,28 +159,33 @@ test("demo steps 8 and 9: dashboard numbers and a CSV export with review status"
   expect(rows.find((r) => r.startsWith("1,PSV-1,"))).toMatch(/,confirmed$/);
 });
 
-test("demo step 4: clicking an object in 3D selects it and shows its details", async ({ page }) => {
-  await open(page);
-  const viewer = page.getByTestId("viewer");
-  const box = await viewer.boundingBox();
-  if (!box) throw new Error("no viewer");
+test("demo step 4: clicking an object in 3D selects exactly that object, by GPU pick", async ({
+  page,
+}) => {
+  await open(page, "/?stats&e2e");
+  // Object 3 (a pipe) has its centre at (3, 0, 37) in the fixture plant. Click exactly
+  // there, as the camera shows it now.
+  const at = await page.evaluate(() => {
+    const v = (
+      window as unknown as {
+        __scanViewer: { projectToScreen(p: number[]): { x: number; y: number } };
+      }
+    ).__scanViewer;
+    return v.projectToScreen([3, 0, 37]);
+  });
+  await page.mouse.click(at.x, at.y);
 
-  // The fixture objects sit in a row across the middle of the default view; click along it
-  // until one is hit (a click on the background or empty space selects nothing).
-  const detail = page.locator("#detail-heading");
-  for (let fx = 0.2; fx <= 0.8 && (await detail.count()) === 0; fx += 0.04) {
-    for (let fy = 0.4; fy <= 0.6 && (await detail.count()) === 0; fy += 0.05) {
-      await page.mouse.click(box.x + box.width * fx, box.y + box.height * fy);
-      await page.waitForTimeout(100);
-    }
-  }
-
-  await expect(detail).toBeVisible();
-  const objectLine = await page
-    .getByRole("article")
-    .getByText(/^Object \d$/)
-    .textContent();
-  expect(["Object 1", "Object 2", "Object 3", "Object 5", "Object 6"]).toContain(objectLine);
+  const article = page.getByRole("article");
+  await expect(article.getByText("Object 3", { exact: true })).toBeVisible();
+  await expect(article.getByText("Pipe", { exact: true }).first()).toBeVisible();
+  // The point under the cursor was picked on the GPU, not by the bounding-box fallback.
+  expect(
+    await page.evaluate(
+      () =>
+        (window as unknown as { __scanViewer: { lastPickMethod: string } }).__scanViewer
+          .lastPickMethod,
+    ),
+  ).toBe("gpu");
   // The same object is selected in the table.
-  await expect(table(page).getByRole("row", { selected: true })).toHaveCount(1);
+  await expect(table(page).getByRole("row", { selected: true })).toContainText("Pipe");
 });

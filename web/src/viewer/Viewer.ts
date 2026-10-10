@@ -68,6 +68,8 @@ export class Viewer {
   private pointerDown: { x: number; y: number } | null = null;
   private frame = 0;
   private disposed = false;
+  /** How the last click was resolved: GPU point pick or the bounding-box fallback. */
+  lastPickMethod: "gpu" | "boxes" | null = null;
   private stats = { frames: 0, since: performance.now(), visiblePoints: 0 };
 
   constructor(
@@ -188,6 +190,16 @@ export class Viewer {
     else this.setView(view);
   }
 
+  /** Page coordinates of a world point in the current view (browser tests, `?e2e`). */
+  projectToScreen(point: Vec3): { x: number; y: number } {
+    const v = new THREE.Vector3(...point).project(this.camera);
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    return {
+      x: rect.left + ((v.x + 1) / 2) * rect.width,
+      y: rect.top + ((1 - v.y) / 2) * rect.height,
+    };
+  }
+
   dispose(): void {
     this.disposed = true;
     cancelAnimationFrame(this.frame);
@@ -250,11 +262,13 @@ export class Viewer {
       });
       if (hit) {
         // A click on the floor or the structure selects nothing.
+        this.lastPickMethod = "gpu";
         if (this.backgroundClassIds.has(hit.classification as number)) return null;
         return hit["point source id"] as number;
       }
     }
     const { origin, direction } = raycaster.ray;
+    this.lastPickMethod = "boxes";
     return pickByBoxes(origin.toArray() as Vec3, direction.toArray() as Vec3, this.pickBoxes);
   }
 

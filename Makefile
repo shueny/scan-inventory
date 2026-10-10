@@ -5,6 +5,7 @@ install:
 	cd scripts && uv sync
 	cd api && uv sync
 	pnpm --dir web install --frozen-lockfile
+	pnpm --dir web exec playwright install chromium
 
 check: check-scripts check-api check-web
 

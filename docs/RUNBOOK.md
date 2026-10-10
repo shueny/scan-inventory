@@ -70,6 +70,8 @@ None yet.
   for the queue at 1280 px.
 - T7 (open questions 2 and 3, ADR 0013): confirm the families, "SW - SE" as its own zone, and
   that rejected objects are left out of the numbers.
+- T8: the GitHub repository is private; the README's clone step needs access. Make it public
+  before sharing the README (or the demo's About link)? ADR 0014 (compose web service) to confirm.
 
 ## Log
 
@@ -120,3 +122,11 @@ None yet.
   stack on ports 8188/8100/8180) all exit 0 in about 2 minutes; demo steps 1 to 9 pass there
   (3D pick 3 of 8 clicks on objects, issue resolved and kept after reload, CSV 260 rows). Stack,
   volume, images and clone removed. Smoke test extended with step 4 (fails without picking).
+- 2026-10-10: T8 review round 1: CI red (high): the step 4 test swept a horizontal band, but in CI
+  the device preset set a 1280 x 720 viewport and the objects lay on a diagonal, so no click hit.
+  Now deterministic: `?e2e` exposes the camera projection and the pick method; the test clicks
+  object 3's centre and requires "Object 3" picked on the GPU (passes on Metal and SwiftShader).
+  Mediums: repo is private (README says so; visibility is the owner's call), Playwright browser
+  now in `make install`, api healthcheck before web starts, performance re-measured uncapped.
+  Lows: nginx re-resolves the api, 404 for missing assets, gzip, tiles revalidated, ports in
+  .env.example, diagram link. Not changed: Dockerfile copies test files for tsc (works; noted).

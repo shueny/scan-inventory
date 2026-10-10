@@ -30,8 +30,10 @@ export default defineConfig({
     {
       name: "chromium",
       // WebGL without a GPU (CI): Chromium's software renderer.
+      // The device preset sets 1280 x 720; keep the 1440 x 900 viewport from `use` above.
       use: {
         ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 900 },
         launchOptions: { args: ["--enable-unsafe-swiftshader"] },
       },
     },

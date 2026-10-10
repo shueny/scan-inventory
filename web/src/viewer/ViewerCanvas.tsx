@@ -40,6 +40,10 @@ export function ViewerCanvas() {
       onStats: setStats,
     });
     viewer.current = v;
+    // Browser tests (Playwright, `?e2e`) read the camera projection and the pick method.
+    if (new URLSearchParams(location.search).has("e2e")) {
+      (window as unknown as { __scanViewer?: Viewer }).__scanViewer = v;
+    }
     // Only the viewer still mounted reports its state (StrictMode creates one and
     // throws it away first; its load must not mark the second one as ready).
     v.load().then(
