@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { DataSourceProvider } from "../data/DataSourceProvider";
 import type { ScanDataSource } from "../data/ScanDataSource";
 import { useViewStore } from "../state/viewStore";
@@ -31,8 +32,10 @@ describe("DemoBanner", () => {
     expect(screen.getByText(/saved only in this browser/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Reset demo" }));
     expect(resetDemo).not.toHaveBeenCalled(); // asks first
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(resetDemo).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Reset demo" })).toHaveFocus();
 
     await user.click(screen.getByRole("button", { name: "Reset demo" }));
     await user.click(screen.getByRole("button", { name: "Yes, reset" }));
@@ -41,6 +44,17 @@ describe("DemoBanner", () => {
     expect(invalidate).toHaveBeenCalled();
     expect(useViewStore.getState()).toMatchObject({ selectedId: null, selectedIssueId: null });
     expect(await screen.findByRole("button", { name: "Reset demo" })).toBeInTheDocument();
+  });
+
+  it("tells the visitor when the reset fails, and stays usable", async () => {
+    const user = userEvent.setup();
+    withSource({ resetDemo: () => Promise.reject(new Error("x")), isPersistent: () => true });
+
+    await user.click(screen.getByRole("button", { name: "Reset demo" }));
+    await user.click(screen.getByRole("button", { name: "Yes, reset" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("did not work");
+    expect(screen.getByRole("button", { name: "Yes, reset" })).toBeEnabled();
   });
 
   it("says so when browser storage is blocked", () => {
@@ -99,8 +113,37 @@ describe("AboutPanel", () => {
     );
     expect(screen.getByRole("link", { name: "doi:10.5281/zenodo.21775624" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Close" })).toHaveFocus();
+    expect(screen.getByRole("img", { name: /Python pipeline/ })).toBeInTheDocument();
 
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("keeps Tab inside the dialog and gives focus back to the opener when it closes", async () => {
+    const user = userEvent.setup();
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            About
+          </button>
+          {open && <AboutPanel onClose={() => setOpen(false)} />}
+        </>
+      );
+    }
+    render(<Harness />);
+    await user.click(screen.getByRole("button", { name: "About" }));
+    const dialog = screen.getByRole("dialog");
+
+    for (let i = 0; i < 6; i++) {
+      await user.tab();
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    }
+    await user.tab({ shift: true });
+    expect(dialog.contains(document.activeElement)).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.getByRole("button", { name: "About" })).toHaveFocus();
   });
 });

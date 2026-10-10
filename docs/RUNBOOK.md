@@ -60,13 +60,16 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 
 ## Owner-only steps (collected here as they come up)
 
-- T9: everything in [docs/DEPLOY.md](DEPLOY.md):
-  1. Cloudflare account, R2 bucket, R2 token and rclone remote.
-  2. Upload the data.
+- T9: everything in [docs/DEPLOY.md](DEPLOY.md), in this order:
+  1. Cloudflare account, R2 bucket, R2 token and rclone remote (with `no_check_bucket`).
+  2. Upload the data (video included).
   3. Create the Pages project with `wrangler login`.
-  4. Add the GitHub secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
-  5. Set up Zero Trust: One-time PIN and the two Access apps with the invited emails.
-  6. Add the live address to the README.
+  4. Set up Zero Trust: One-time PIN and the two Access apps with the invited emails, before any deploy.
+  5. Deploy once and check that `octree.bin` returns 206 through Access.
+  6. Add the GitHub secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+  7. Set `VITE_DEMO_VIDEO_URL` and add the live address to the README.
+- T9: confirm ADR 0015 (data through a Function behind Access, no custom domain) and the About
+  panel's diagram (a three-box picture rather than a full architecture drawing).
 
 ## Proposals for the owner (not done; no silent scope growth)
 
@@ -147,3 +150,12 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 - 2026-10-10: T8 merged (PR #7, CI green on 4a2f683). T9 on branch `t9-demo`: demo mode UI,
   Pages Function for R2 with Range (ADR 0015), demo-stack e2e under wrangler pages dev (8/8),
   upload script, deploy workflow (skips until secrets exist), docs/DEPLOY.md, recording script.
+- 2026-10-10: T9 review round 1: CI green on b1e103f, 1 high (upload script stopped under
+  macOS bash 3.2 `set -u` with an empty array; only the dry run had been tested), 6 medium
+  (rclone with a bucket-scoped token; loading overlay never showed progress and came back;
+  206 headers from our parse instead of R2's returned range; About dialog had no focus trap;
+  no diagram in About; DEPLOY order left the demo public before Access), 10 low. All fixed:
+  both upload paths tested under /bin/bash; Function asks R2 for an explicit range and builds
+  Content-Range from R2's answer, with 416/304/404/405 and HTTP tests on the Cloudflare runtime
+  (11/11); DEPLOY reordered (Access before the first deploy); focus trap and restore; diagram;
+  About text per mode; banner focus and error state; .wrangler/ ignored.

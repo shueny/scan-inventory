@@ -13,6 +13,10 @@ export function ViewerCanvas() {
   const viewer = useRef<Viewer | null>(null);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [stats, setStats] = useState<ViewerStats | null>(null);
+  // Latched: once points were drawn, the loading screen never comes back (e.g. when the
+  // camera looks at empty space and nothing is in view).
+  const [firstPoints, setFirstPoints] = useState(false);
+  const [loadingSeconds, setLoadingSeconds] = useState(0);
   const showStats = new URLSearchParams(location.search).has("stats");
 
   const scan = useScan();
@@ -37,7 +41,10 @@ export function ViewerCanvas() {
       tilesBaseUrl: TILES_BASE_URL,
       pointBudget: POINT_BUDGET,
       onPick: (id) => useViewStore.getState().select(id),
-      onStats: setStats,
+      onStats: (s) => {
+        setStats(s);
+        if (s.visiblePoints > 0) setFirstPoints(true);
+      },
     });
     viewer.current = v;
     // Browser tests (Playwright, `?e2e`) read the camera projection and the pick method.
@@ -84,16 +91,42 @@ export function ViewerCanvas() {
     viewer.current?.select(instance);
   }, [loadState, selectedId, instances.data]);
 
+  // Seconds spent loading, for the loading screen; stops once points are drawn.
+  useEffect(() => {
+    if (firstPoints || loadState === "error") return;
+    const started = Date.now();
+    const timer = setInterval(
+      () => setLoadingSeconds(Math.round((Date.now() - started) / 1000)),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, [firstPoints, loadState]);
+
   return (
     <div className="relative h-full w-full">
       <div ref={container} className="absolute inset-0" data-testid="viewer" />
 
-      {/* Until the first points are drawn, not only until the metadata arrived (PRD 8.7). */}
-      {(loadState === "loading" ||
-        (loadState === "ready" && !(stats && stats.visiblePoints > 0))) && (
+      {/* Loading screen with progress (PRD 8.7): until the first points are drawn. */}
+      {loadState !== "error" && !firstPoints && (
         <Overlay>
-          Loading the scan…
-          {stats && stats.visiblePoints > 0 && ` ${stats.visiblePoints.toLocaleString()} points`}
+          <span role="status">
+            Loading the scan… step{" "}
+            {loadState === "loading" ? "1 of 2: tile index" : "2 of 2: first points"}
+            {loadingSeconds > 0 && ` (${loadingSeconds} s)`}
+          </span>
+          {loadingSeconds >= 20 && (
+            <span className="mt-2 block">
+              This is taking longer than usual: the connection may be slow, or the data could not be
+              read.{" "}
+              <button
+                type="button"
+                onClick={() => location.reload()}
+                className="pointer-events-auto underline"
+              >
+                Reload
+              </button>
+            </span>
+          )}
         </Overlay>
       )}
       {loadState === "error" && (

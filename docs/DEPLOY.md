@@ -40,7 +40,15 @@ Create a new remote named `r2` with these settings:
 - endpoint `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`
 - acl `private`
 
-Then check it with `rclone lsd r2:` (it should list `scan-inventory-demo`). rclone keeps the keys in `~/.config/rclone/rclone.conf`, outside the repo.
+Then, in the advanced settings (or by editing `~/.config/rclone/rclone.conf`), add `no_check_bucket = true` to the `[r2]` section. A token limited to one bucket may not check or create buckets, and without this setting rclone tries to.
+
+Check the remote with:
+
+```bash
+rclone lsf r2:scan-inventory-demo
+```
+
+It should show nothing, or the files from an earlier upload, and no error. (`rclone lsd r2:` lists all buckets, which a bucket-limited token is not allowed to do.) rclone keeps the keys in `~/.config/rclone/rclone.conf`, outside the repo.
 
 ## 4. Upload the data
 
@@ -49,42 +57,19 @@ scripts/deploy/upload_demo_data.sh --dry-run   # shows what would be copied
 scripts/deploy/upload_demo_data.sh
 ```
 
-This uploads about 400 MB under `v1/`: `v1/potree/nora/` (metadata, hierarchy, octree), `v1/data/` (the three JSON files), and `v1/media/demo.webm` if you recorded the video (step 7). The 395 MB `octree.bin` goes up in 100 MB parts.
+This uploads about 400 MB under `v1/`: `v1/potree/nora/` (metadata, hierarchy, octree), `v1/data/` (the three JSON files), and `v1/media/demo.webm` (the demo video, step 9). The 395 MB `octree.bin` goes up in 100 MB parts. Nobody can read the bucket yet: it is private, and the site that reads it comes in step 7.
 
-## 5. Create the Pages project and deploy once
+## 5. Create the Pages project (no deploy yet)
 
 ```bash
 cd web
 npx wrangler login                     # opens the browser: log in to Cloudflare there
 npx wrangler pages project create scan-inventory --production-branch=main
-pnpm build:demo
-npx wrangler pages deploy dist --project-name=scan-inventory --branch=main
 ```
 
-`wrangler pages deploy` reads `web/wrangler.toml` and binds the bucket to the Function as `DEMO_DATA`. It prints the address, `https://scan-inventory.pages.dev` (if the name is taken, Cloudflare adds a suffix).
+Nothing is online yet. Set up Access first (step 6), so the demo and its data are never public, not even for a minute.
 
-Check it: open the address, and in DevTools > Network, filter for `octree.bin`. The requests should show status **206**. If they show 404, the upload (step 4) or the bucket name is wrong.
-
-## 6. Let GitHub deploy on every push to main
-
-1. Create an API token at **My Profile** > **API Tokens** > **Create Token** > **Custom token**:
-   - permission **Account** > **Cloudflare Pages** > **Edit**;
-   - if the deploy fails with a permission error about R2, also add **Account** > **Workers R2 Storage** > **Read**.
-2. In GitHub, add two secrets to `shueny/scan-inventory` under **Settings** > **Secrets and variables** > **Actions** > **New repository secret**:
-   - `CLOUDFLARE_API_TOKEN`: the token from step 1.
-   - `CLOUDFLARE_ACCOUNT_ID`: your Account ID.
-3. The **Deploy demo** workflow runs on the next push to `main`. You can also start it by hand under **Actions** > **Deploy demo** > **Run workflow**. Until the secrets exist, it skips the deploy and stays green.
-
-## 7. Record the demo video (optional, before step 4)
-
-```bash
-pnpm --dir web dev --port 5174          # static mode with the local tiles
-pnpm --dir web demo:record              # in a second terminal
-```
-
-It plays the demo script in a visible browser window, then writes `data/demo/demo.webm` and the README screenshots. Upload again (step 4), then set `VITE_DEMO_VIDEO_URL=/r2/v1/media/demo.webm` in `web/.env.demo` and push. The small-screen and no-WebGL notices then link to the video.
-
-## 8. Only invited people: Cloudflare Access
+## 6. Only invited people: Cloudflare Access
 
 1. Open **Zero Trust** in the dashboard. The first time, choose a team name and the **Free** plan (up to 50 users).
 2. Go to **Integrations** > **Identity providers** > **Add** > **One-time PIN**. Invited people then get a code by email; they need no account.
@@ -95,13 +80,52 @@ It plays the demo script in a visible browser window, then writes `data/demo/dem
    3. Go back to step 3 and enable the access policy again.
 
    You end up with two applications: `scan-inventory.pages.dev` and `*.scan-inventory.pages.dev`. Cloudflare documents this under "Known issues" > "Enable Access on your `*.pages.dev` domain".
-5. In each of the two applications, edit the policy. Set **Action** to **Allow**, and in **Include** add **Emails**, then enter the addresses of the people you invite. Type the addresses into Cloudflare directly; there is no need to share them anywhere else.
-6. Check it in a private browser window: opening the address asks for an email, and an invited address receives a code and gets in. Then check DevTools > Network again: `octree.bin` should still show 206.
+5. In each of the two applications, edit the policy. Set **Action** to **Allow**, and in **Include** add **Emails**, then enter your own address and the addresses of the people you invite. Type them into Cloudflare directly; there is no need to share them anywhere else.
 
-## 9. Finish
+## 7. Deploy once and check
+
+```bash
+pnpm build:demo
+npx wrangler pages deploy dist --project-name=scan-inventory --branch=main
+```
+
+`wrangler pages deploy` reads `web/wrangler.toml` and binds the bucket to the Function as `DEMO_DATA`. It prints the address, `https://scan-inventory.pages.dev` (if the name is taken, Cloudflare adds a suffix).
+
+Check it:
+1. In a private browser window, open the address. It should ask for an email. Enter an invited address and the code you receive, and the app should load.
+2. Open the address with an address that is not invited: you should not get in.
+3. In DevTools > Network, filter for `octree.bin`. The requests should show status **206**. If they show 404, the upload (step 4) or the bucket name is wrong.
+
+## 8. Let GitHub deploy on every push to main
+
+1. Create an API token at **My Profile** > **API Tokens** > **Create Token** > **Custom token**:
+   - permission **Account** > **Cloudflare Pages** > **Edit**;
+   - if the deploy fails with a permission error about R2, also add **Account** > **Workers R2 Storage** > **Read**.
+2. In GitHub, add two secrets to `shueny/scan-inventory` under **Settings** > **Secrets and variables** > **Actions** > **New repository secret**:
+   - `CLOUDFLARE_API_TOKEN`: the token from step 1.
+   - `CLOUDFLARE_ACCOUNT_ID`: your Account ID.
+3. The **Deploy demo** workflow runs on the next push to `main`. You can also start it by hand under **Actions** > **Deploy demo** > **Run workflow**. Until the secrets exist, it skips the deploy and stays green.
+
+## 9. The demo video
+
+The video (`data/demo/demo.webm`, 83 s) is already recorded. Re-record it after UI changes:
+
+```bash
+pnpm --dir web dev --port 5174          # static mode with the local tiles
+pnpm --dir web demo:record              # in a second terminal
+```
+
+To publish it:
+1. Upload again (step 4).
+2. In `web/.env.demo`, set `VITE_DEMO_VIDEO_URL=/r2/v1/media/demo.webm`.
+3. Push.
+
+The small-screen and no-WebGL notices then link to it, and so can the README: the link only works for invited people, like the demo.
+
+## 10. Finish
 
 - Add the address to the README ("Live demo"). Say there that access is by invitation.
-- Before sending the link to someone, add their email to the Access policy (step 8.5).
+- Before sending the link to someone, add their email to the Access policy (step 6.5).
 - To make the demo public later, delete the two Access applications. Nothing in the code changes.
 
 ## Limits to keep in mind

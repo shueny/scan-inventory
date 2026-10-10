@@ -4,53 +4,64 @@
  * The demo's tiles and JSON live in a private R2 bucket and are served by a Pages Function
  * on the same, Access-protected site. The Potree loader reads `octree.bin` and
  * `hierarchy.bin` with Range requests and needs `206 Partial Content` with a correct
- * `Content-Range`; R2's own example does not build that, so this module does. It only
- * uses the small part of the R2 binding API that it needs (below), so it can be unit
- * tested without the Workers runtime.
+ * `Content-Range`. The function turns the Range header into an explicit range for R2
+ * (`rangeRequest`), and the response headers are built from the range R2 says it returned
+ * (`r2Response`), so headers and body always agree (review round 1 of T9). This module
+ * only uses the small part of the R2 API it needs, so it is unit tested without the
+ * Workers runtime.
  */
+
+/** The range options R2's `get` accepts (a subset of `R2Range`). */
+export type R2RangeOption = { offset: number; length?: number } | { suffix: number };
 
 /** The parts of an R2 object this module reads (`R2Object` / `R2ObjectBody`). */
 export interface R2Like {
   size: number;
   httpEtag: string;
-  /** The byte range R2 returned, when the request had a Range header. */
+  /** The byte range R2 returned, when one was asked for. */
   range?: { offset?: number; length?: number; suffix?: number };
-  /** Present when the object was read (no `body`: a precondition such as If-None-Match held). */
+  /** Present when the object was read (no `body`: If-None-Match matched). */
   body?: ReadableStream | null;
   writeHttpMetadata(headers: Headers): void;
 }
 
-export interface ByteRange {
-  start: number;
-  /** Inclusive. */
-  end: number;
-}
-
 /**
- * The byte range a `Range` header asks for, clamped to the object, or "invalid" when it
- * cannot be satisfied (RFC 9110: 416). Only single ranges are supported; the loader never
- * asks for more. `null` means no usable range: send the whole object.
+ * The range a `Range` header asks for, as an R2 option. `null`: no usable range, send the
+ * whole object (no header, other units, several ranges: the loader never sends those).
+ * "invalid": a byte range that can never be satisfied (end before start, "bytes=-0").
+ * Whether a start lies past the end of the object is only known from R2 (see the function).
  */
-export function parseRange(header: string | null, size: number): ByteRange | "invalid" | null {
+export function rangeRequest(header: string | null): R2RangeOption | null | "invalid" {
   if (!header) return null;
-  const m = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
-  if (!m) return null; // other units or several ranges: ignore and send everything
+  const m = /^bytes=(\d*)-(\d*)$/i.exec(header.replace(/\s+/g, ""));
+  if (!m) return null;
   const [, a = "", b = ""] = m;
   if (a === "" && b === "") return null;
   if (a === "") {
-    // suffix: the last N bytes
-    const n = Number(b);
-    if (n === 0) return "invalid";
-    return { start: Math.max(0, size - n), end: size - 1 };
+    const suffix = Number(b);
+    return suffix === 0 ? "invalid" : { suffix };
   }
-  const start = Number(a);
-  if (start >= size) return "invalid";
-  const end = b === "" ? size - 1 : Math.min(Number(b), size - 1);
-  if (end < start) return "invalid";
-  return { start, end };
+  const offset = Number(a);
+  if (b === "") return { offset };
+  const end = Number(b);
+  if (end < offset) return "invalid";
+  return { offset, length: end - offset + 1 };
 }
 
-/** Headers that every answer carries. */
+/** First and last byte (inclusive) of what R2 returned, clamped to the object. */
+export function returnedRange(object: R2Like): { start: number; end: number } {
+  const size = object.size;
+  const r = object.range ?? {};
+  if (r.suffix !== undefined) {
+    const length = Math.min(r.suffix, size);
+    return { start: size - length, end: size - 1 };
+  }
+  const start = Math.min(r.offset ?? 0, size);
+  const length = Math.min(r.length ?? size - start, size - start);
+  return { start, end: start + length - 1 };
+}
+
+/** Headers that every answer about an object carries. */
 function baseHeaders(object: R2Like, cacheControl: string): Headers {
   const headers = new Headers();
   object.writeHttpMetadata(headers);
@@ -61,15 +72,15 @@ function baseHeaders(object: R2Like, cacheControl: string): Headers {
 }
 
 /**
- * The response for a GET or HEAD of `object`, given the request's Range header.
+ * The response for a GET or HEAD of `object`.
  * - no object: 404
- * - no body after a conditional read (If-None-Match matched): 304
- * - a Range header: 206 with Content-Range (416 if it cannot be satisfied)
+ * - GET without a body (If-None-Match matched): 304
+ * - a range was asked for: 206 with Content-Range from R2's returned range
  * - otherwise: 200 with the whole object
  */
 export function r2Response(
   object: R2Like | null,
-  request: { method: string; rangeHeader: string | null },
+  request: { method: string; ranged: boolean },
   cacheControl: string,
 ): Response {
   if (!object) return new Response("Not found", { status: 404 });
@@ -78,18 +89,22 @@ export function r2Response(
 
   if (!head && !object.body) return new Response(null, { status: 304, headers });
 
-  const range = parseRange(request.rangeHeader, object.size);
-  if (range === "invalid") {
-    headers.set("Content-Range", `bytes */${object.size}`);
-    return new Response(null, { status: 416, headers });
-  }
-  if (range) {
-    headers.set("Content-Range", `bytes ${range.start}-${range.end}/${object.size}`);
-    headers.set("Content-Length", String(range.end - range.start + 1));
-    return new Response(head ? null : (object.body ?? null), { status: 206, headers });
+  if (request.ranged && !head) {
+    const { start, end } = returnedRange(object);
+    if (end < start) return notSatisfiable(object.size); // nothing left after the start
+    headers.set("Content-Range", `bytes ${start}-${end}/${object.size}`);
+    headers.set("Content-Length", String(end - start + 1));
+    return new Response(object.body ?? null, { status: 206, headers });
   }
   headers.set("Content-Length", String(object.size));
   return new Response(head ? null : (object.body ?? null), { status: 200, headers });
+}
+
+/** 416 for a range the object cannot satisfy; `size` when known. */
+export function notSatisfiable(size: number | null): Response {
+  const headers = new Headers({ "Accept-Ranges": "bytes" });
+  if (size !== null) headers.set("Content-Range", `bytes */${size}`);
+  return new Response(null, { status: 416, headers });
 }
 
 /**
@@ -97,10 +112,12 @@ export function r2Response(
  * that tries to leave it ("..", empty segments). `/r2/v1/potree/nora/octree.bin` ->
  * `v1/potree/nora/octree.bin`.
  */
-export function keyFromPath(segments: readonly string[]): string | null {
+export function keyFromPath(segments: readonly unknown[]): string | null {
   if (segments.length === 0) return null;
   for (const s of segments) {
-    if (s === "" || s === "." || s === ".." || s.includes("\\")) return null;
+    if (typeof s !== "string" || s === "" || s === "." || s === ".." || s.includes("\\")) {
+      return null;
+    }
   }
   return segments.join("/");
 }

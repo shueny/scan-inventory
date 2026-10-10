@@ -22,8 +22,6 @@ bucket=${R2_BUCKET:-scan-inventory-demo}
 version=${DATA_VERSION:-v1}
 repo_root=$(cd "$(dirname "$0")/../.." && pwd)
 tiles=${DEMO_TILES:-$repo_root/data/potree/nora-random13}
-dry=()
-[[ ${1:-} == "--dry-run" ]] && dry=(--dry-run)
 
 command -v rclone >/dev/null || { echo "rclone not found: brew install rclone" >&2; exit 1; }
 for f in metadata.json hierarchy.bin octree.bin; do
@@ -34,7 +32,9 @@ for f in scan.json instances.json issues.json; do
 done
 
 # 100 MB parts: octree.bin goes up in 4 parts, each one retried on its own if it fails.
-opts=(--s3-upload-cutoff=100M --s3-chunk-size=100M --checksum --progress "${dry[@]}")
+opts=(--s3-upload-cutoff=100M --s3-chunk-size=100M --checksum --progress)
+# Appended only when asked: macOS's bash 3.2 treats an empty array as unset under `set -u`.
+[[ ${1:-} == "--dry-run" ]] && opts+=(--dry-run)
 dest="$remote:$bucket/$version"
 
 echo "Tiles $tiles -> $dest/potree/nora/"

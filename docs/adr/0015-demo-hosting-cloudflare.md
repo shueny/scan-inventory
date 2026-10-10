@@ -23,13 +23,14 @@ PRD 6.2 puts the demo site on a static host and the tiles in a public R2 bucket.
 
 Option 1.
 
-- `web/functions/r2/[[path]].ts` serves `/r2/<key>` from the bucket bound as `DEMO_DATA`. GET and HEAD only, keys checked against `..`, and Range handled in `web/cloudflare/r2Response.ts`: 206 with `Content-Range`, 416, 304 on `If-None-Match`, 404. The module is unit-tested without the Workers runtime.
+- `web/functions/r2/[[path]].ts` serves `/r2/<key>` from the bucket bound as `DEMO_DATA`. GET and HEAD only, and keys are checked against `..`. The Range header becomes an explicit range for R2, and `Content-Range` is built from the range R2 says it returned, so headers and body always agree. The answers are 206, 416 (also when R2 refuses a start past the end), 304 on `If-None-Match` (the only condition passed on), 404 and 405. The logic is in `web/cloudflare/r2Response.ts`, unit-tested, and the Function is tested over HTTP on the Cloudflare runtime (`web/e2e/r2.spec.ts`).
 - `web/public/_routes.json` sends only `/r2/*` to the Function, so the app's own files stay free static assets.
 - The demo build (`pnpm --dir web build:demo`, settings in `web/.env.demo`) is static mode with data under `/r2/v1/...`. `v1` is the data version: a new upload goes to `v2` and the review state kept in visitors' browsers starts clean (PRD 8.7).
 - `web/wrangler.toml` holds the project name and the R2 binding; `wrangler pages deploy` applies it.
 - `scripts/deploy/upload_demo_data.sh` uploads the 13 % tiles and the JSON with rclone (multipart). The owner runs it; CI never handles data.
 - `.github/workflows/deploy.yml` builds and deploys on every push to `main` with `cloudflare/wrangler-action@v4`, and skips itself until the owner adds the two secrets.
 - Demo UI (PRD 8.7): a banner saying review changes stay in this browser, "Reset demo" with a confirmation, a notice when browser storage is blocked, a loading overlay until the first points are drawn, a WebGL 2 check with a screenshot, a small-screen notice with "Continue anyway", and an About panel.
+- Order of the owner's steps: the Pages project and the Access apps exist before the first deploy, so the demo is never public (`docs/DEPLOY.md`).
 - Tests: the same Playwright smoke suite runs against the demo stack locally (`pnpm --dir web test:e2e:demo`: `wrangler pages dev` with the fixture plant in a local R2 bucket), in `make gate` and in CI.
 
 ## Consequences

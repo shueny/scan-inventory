@@ -47,3 +47,6 @@ web/test-results/
 
 # --- Local tools (PotreeConverter build) ---
 .tools/
+
+# --- Cloudflare wrangler (local dev state and bundles) ---
+.wrangler/

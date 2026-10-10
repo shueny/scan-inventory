@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SCAN_ID } from "../config";
 import { useDataSource } from "../data/DataSourceProvider";
 import { useViewStore } from "../state/viewStore";
@@ -13,15 +13,32 @@ export function DemoBanner() {
   const client = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const persistent = source.isPersistent?.(SCAN_ID) ?? true;
+  const resetButton = useRef<HTMLButtonElement>(null);
+  const cancelButton = useRef<HTMLButtonElement>(null);
+  const wasConfirming = useRef(false);
+
+  // Keep keyboard focus on the visible control when the confirmation opens or closes.
+  useEffect(() => {
+    if (confirming) cancelButton.current?.focus();
+    else if (wasConfirming.current) resetButton.current?.focus();
+    wasConfirming.current = confirming;
+  }, [confirming]);
 
   const reset = async () => {
     setBusy(true);
-    await source.resetDemo?.();
-    useViewStore.setState({ selectedId: null, selectedIssueId: null });
-    await client.invalidateQueries();
-    setBusy(false);
-    setConfirming(false);
+    setFailed(false);
+    try {
+      await source.resetDemo?.();
+      useViewStore.setState({ selectedId: null, selectedIssueId: null });
+      await client.invalidateQueries();
+      setConfirming(false);
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -39,7 +56,7 @@ export function DemoBanner() {
       {source.resetDemo &&
         (confirming ? (
           <span className="flex items-center gap-2" role="group" aria-label="Confirm reset">
-            <span>Forget all your review changes?</span>
+            <span aria-live="polite">Forget all your review changes?</span>
             <button
               type="button"
               onClick={() => void reset()}
@@ -49,6 +66,7 @@ export function DemoBanner() {
               Yes, reset
             </button>
             <button
+              ref={cancelButton}
               type="button"
               onClick={() => setConfirming(false)}
               className="rounded px-2 py-0.5 underline"
@@ -58,6 +76,7 @@ export function DemoBanner() {
           </span>
         ) : (
           <button
+            ref={resetButton}
             type="button"
             onClick={() => setConfirming(true)}
             className="rounded border border-amber-300 bg-white px-2 py-0.5 hover:bg-amber-100"
@@ -65,6 +84,11 @@ export function DemoBanner() {
             Reset demo
           </button>
         ))}
+      {failed && (
+        <p role="alert" className="text-red-700">
+          The reset did not work. Reload the page and try again.
+        </p>
+      )}
     </div>
   );
 }
