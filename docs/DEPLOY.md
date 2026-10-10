@@ -123,9 +123,17 @@ To publish it:
 
 The small-screen and no-WebGL notices then link to it, and so can the README: the link only works for invited people, like the demo.
 
-## 10. Finish
+## 10. Finish: the T9 checks on the live demo
 
-- Add the address to the README ("Live demo"). Say there that access is by invitation.
+These are the PRD's "done when" checks for T9. Only you can run them, because the demo is behind your Access list:
+
+1. Play the 2-minute demo script (PRD section 3, steps 2 to 9) on the live address in **Chrome** and in **Firefox** on a desktop computer, logged in through Access. Check that the banner, "Reset demo" and the About panel work.
+2. With an empty browser cache, on a normal connection, check that the first points appear within about **5 seconds** after login. The loading screen shows the seconds.
+3. Add the address to the README ("Live demo") and link the video, `<address>/r2/v1/media/demo.webm`. Say there that both need an invitation.
+4. Set the RUNBOOK's T9 status to done.
+
+Afterwards:
+
 - Before sending the link to someone, add their email to the Access policy (step 6.5).
 - To make the demo public later, delete the two Access applications. Nothing in the code changes.
 

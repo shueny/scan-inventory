@@ -2,7 +2,7 @@
 // bound as DEMO_DATA, at /r2/<key>, with Range support (ADR 0015). The whole site,
 // this function included, sits behind Cloudflare Access, so only invited people reach it.
 // The logic is in cloudflare/r2Handler.ts (tested with a stub bucket).
-import { handleR2Request, type BucketLike } from "../../cloudflare/r2Handler";
+import { handleR2Request } from "../../cloudflare/r2Handler";
 
 interface Env {
   DEMO_DATA: R2Bucket;
@@ -11,5 +11,6 @@ interface Env {
 export const onRequest: PagesFunction<Env, "path"> = ({ request, env, params }) => {
   const path = params.path;
   const segments = Array.isArray(path) ? path : path === undefined ? [] : [path];
-  return handleR2Request(request, segments, env.DEMO_DATA as unknown as BucketLike);
+  // No cast: tsc -p functions checks that the real R2Bucket fits the handler's BucketLike.
+  return handleR2Request(request, segments, env.DEMO_DATA);
 };

@@ -33,8 +33,12 @@ export function AboutPanel({ onClose }: { onClose: () => void }) {
       const first = items[0];
       const last = items[items.length - 1];
       if (!first || !last) return;
-      const inside = dialog.current.contains(document.activeElement);
-      if (!inside || (e.shiftKey && document.activeElement === first)) {
+      // The dialog box itself counts as "not on a control": after a click on its text it has
+      // focus, and Shift+Tab must not leave it (review round 3).
+      const onControl =
+        dialog.current.contains(document.activeElement) &&
+        document.activeElement !== dialog.current;
+      if (!onControl || (e.shiftKey && document.activeElement === first)) {
         e.preventDefault();
         (e.shiftKey ? last : first).focus();
       } else if (!e.shiftKey && document.activeElement === last) {

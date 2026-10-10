@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Upload the public demo's data to the private R2 bucket (ADR 0015, docs/DEPLOY.md step 5).
+# Upload the public demo's data to the private R2 bucket (ADR 0015, docs/DEPLOY.md step 4).
 #
 #   scripts/deploy/upload_demo_data.sh [--dry-run]
 #
@@ -9,7 +9,7 @@
 #   data/demo/demo.webm (if present)                                    -> <version>/media/demo.webm
 #
 # Uses rclone with multipart upload (wrangler's upload is limited to 315 MB; octree.bin is
-# ~395 MB). Needs an rclone remote for R2 (docs/DEPLOY.md step 4). Settings, from the
+# ~395 MB). Needs an rclone remote for R2 (docs/DEPLOY.md step 3). Settings, from the
 # environment:
 #   R2_REMOTE       rclone remote name            (default: r2)
 #   R2_BUCKET       bucket name                   (default: scan-inventory-demo)

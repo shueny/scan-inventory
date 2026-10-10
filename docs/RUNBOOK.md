@@ -67,7 +67,9 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
   4. Set up Zero Trust: One-time PIN and the two Access apps with the invited emails, before any deploy.
   5. Deploy once and check that `octree.bin` returns 206 through Access.
   6. Add the GitHub secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
-  7. Set `VITE_DEMO_VIDEO_URL` and add the live address to the README.
+  7. Set `VITE_DEMO_VIDEO_URL`, and add the live address and the video link to the README.
+  8. The T9 checks on the live demo (DEPLOY step 10): the demo script in Chrome and in Firefox,
+     and first points within about 5 s on a normal connection.
 - T9: confirm ADR 0015 (data through a Function behind Access, no custom domain) and the About
   panel's diagram (a three-box picture rather than a full architecture drawing).
 
@@ -166,3 +168,7 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
   a stub bucket (416 only for a start past the end, other errors rethrown); overlay tested with
   a fake viewer; document-level focus trap tested from outside; If-None-Match + Range HTTP
   tests; DEPLOY notes (rename on error, manual Access app, live past-the-end check).
+- 2026-10-10: T9 review round 3 (last): CI green on 06a6bdf, 0 high, 2 medium (three T9
+  done-when checks were missing from the owner's list; Shift+Tab could leave About when the
+  dialog box itself had focus), 3 low. All fixed with tests; as this was the last round, the
+  fixes were checked by the gate and CI, not by a fourth review.

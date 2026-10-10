@@ -59,6 +59,11 @@ describe("handleR2Request", () => {
     expect(onlyIf?.get("If-None-Match")).toBe('"e"');
     expect(onlyIf?.has("If-Match")).toBe(false);
     expect((await handleR2Request(req({}, "POST"), path, b)).status).toBe(405);
+    const missing: BucketLike = {
+      head: () => Promise.resolve(null),
+      get: () => Promise.resolve(null),
+    };
+    expect((await handleR2Request(req({ Range: "bytes=50-10" }), path, missing)).status).toBe(404);
     expect((await handleR2Request(req(), ["v1", ".."], b)).status).toBe(404);
   });
 });

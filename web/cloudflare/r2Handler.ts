@@ -42,7 +42,10 @@ export async function handleR2Request(
   }
 
   const range = rangeRequest(request.headers.get("Range"));
-  if (range === "invalid") return notSatisfiable((await bucket.head(key))?.size ?? null);
+  if (range === "invalid") {
+    const meta = await bucket.head(key);
+    return meta ? notSatisfiable(meta.size) : new Response("Not found", { status: 404 });
+  }
 
   // Only If-None-Match is passed on, so "no body" always means "not modified" (304).
   const onlyIf = new Headers();
