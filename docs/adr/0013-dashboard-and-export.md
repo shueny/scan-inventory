@@ -1,10 +1,10 @@
 # 0013 · Dashboard families, zone counting and CSV export
 
-Status: proposed (owner reviews after the T6–T9 run) · 2026-10-09 · Task T7
+Status: accepted (owner, 2026-10-10) · 2026-10-09 · Task T7
 
 ## Context
 
-T7 adds the dashboard and the CSV export (PRD 8.5, demo steps 8 and 9). The PRD leaves two open questions to the owner at T7: the class families for the dashboard grouping (question 2) and whether "SW - SE" objects count in both zones (question 3). The owner asked for the T6–T9 run to continue without stopping, so both use the recommended answer and are listed here for review.
+T7 adds the dashboard and the CSV export (PRD 8.5, demo steps 8 and 9). The PRD leaves two open questions to the owner at T7: the class families for the dashboard grouping (question 2) and whether "SW - SE" objects count in both zones (question 3). The owner asked for the T6–T9 run to continue without stopping, so both use the recommended answer and are listed here for review. The owner accepted both answers on 2026-10-10.
 
 ## Options and decisions
 

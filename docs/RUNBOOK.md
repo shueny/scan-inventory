@@ -79,10 +79,8 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
   tag, and drop already-used tags from other objects' candidates (ADR 0012, consequences).
 - T6: filter the queue with the inventory filters; "next open issue" after resolving; more room
   for the queue at 1280 px.
-- T7 (open questions 2 and 3, ADR 0013): confirm the families, "SW - SE" as its own zone, and
-  that rejected objects are left out of the numbers.
 - T8: the GitHub repository is private; the README's clone step needs access. Make it public
-  before sharing the README (or the demo's About link)? ADR 0014 (compose web service) to confirm.
+  before sharing the README (or the demo's About link)?
 
 ## Log
 
@@ -177,3 +175,6 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
   and the proposed ADRs 0012 to 0015.
 - 2026-10-10: owner accepted ADR 0015 and decided the demo stays NORA only, with no upload, so it
   needs no hosted backend or paid storage.
+- 2026-10-10: owner accepted ADRs 0012 (review queue), 0013 (dashboard and export: families,
+  "SW - SE" as its own zone, rejected objects left out of the numbers) and 0014 (compose web
+  service).

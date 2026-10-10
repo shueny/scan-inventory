@@ -1,6 +1,6 @@
 # 0012 · Review queue: issue history, actions per type, layout
 
-Status: proposed (owner reviews after the T6–T9 run) · 2026-10-09 · Task T6
+Status: accepted (owner, 2026-10-10) · 2026-10-09 · Task T6
 
 ## Context
 

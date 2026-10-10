@@ -255,7 +255,7 @@ Browser check on the real data (45 issues): static mode, assigning PT-108A to tr
 
 ### Why this way
 
-[ADR 0012](adr/0012-review-queue.md) (proposed): history on each issue, actions per type driven by the data, queue as a tab under the 3D view.
+[ADR 0012](adr/0012-review-queue.md) (accepted): history on each issue, actions per type driven by the data, queue as a tab under the 3D view.
 
 ### Quiz
 
@@ -285,7 +285,7 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 
 ### Why this way
 
-[ADR 0013](adr/0013-dashboard-and-export.md) (proposed): families from the class palette, "SW - SE" as its own zone, export of the filtered list.
+[ADR 0013](adr/0013-dashboard-and-export.md) (accepted): families from the class palette, "SW - SE" as its own zone, export of the filtered list.
 
 ### Quiz
 
@@ -322,7 +322,7 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 
 ### Why this way
 
-[ADR 0014](adr/0014-compose-web-service.md) (proposed): nginx serves the app, the API proxy and the tiles from one origin.
+[ADR 0014](adr/0014-compose-web-service.md) (accepted): nginx serves the app, the API proxy and the tiles from one origin.
 
 ### Quiz
 

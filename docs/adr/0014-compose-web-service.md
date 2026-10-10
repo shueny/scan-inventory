@@ -1,6 +1,6 @@
 # 0014 · Web app in docker compose, one origin
 
-Status: proposed (owner reviews after the T6–T9 run) · 2026-10-10 · Task T8
+Status: accepted (owner, 2026-10-10) · 2026-10-10 · Task T8
 
 ## Context
 
