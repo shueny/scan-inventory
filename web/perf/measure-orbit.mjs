@@ -3,7 +3,7 @@
 // real GPU is used. Run with the app serving the full tiles, e.g. `docker compose up`:
 //
 //   pnpm --dir web perf                      # http://localhost:8088/?stats
-//   pnpm --dir web perf -- <url>
+//   pnpm --dir web perf <url>
 //
 // For each view (whole plant, then three zoom levels) it waits for tiles to stream, orbits
 // the camera for 6 s and records the time between frames with requestAnimationFrame. With
@@ -13,7 +13,8 @@
 // cannot tell how much headroom the GPU has; it answers "does it stay smooth".
 import { chromium } from "@playwright/test";
 
-const url = process.argv[2] ?? "http://localhost:8088/?stats";
+// pnpm 10 passes a "--" separator through to the script; skip it.
+const url = process.argv.slice(2).find((a) => a !== "--") ?? "http://localhost:8088/?stats";
 const views = [
   { label: "whole plant", zoomSteps: 0 },
   { label: "mid zoom", zoomSteps: 6 },

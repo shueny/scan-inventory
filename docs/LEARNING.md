@@ -316,7 +316,7 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 ### Key concepts
 
 - **Reproducibility is tested, not assumed**: a README is only right if someone (or a script) follows it from a clean clone. The check runs each step and records its exit code and duration.
-- **Level of detail**: the loader draws an octree node only when it would cover enough pixels. From far away the whole plant is the root node (13k points); zooming in fetches finer nodes with Range requests. Speed comes from not loading what you cannot see.
+- **Level of detail**: the loader draws an octree node only when it would cover enough pixels. From far away the whole plant is mostly the root node (13k of the 17k points drawn); zooming in fetches finer nodes with Range requests. Speed comes from not loading what you cannot see.
 - **Frame rate is capped by the display**: browsers draw at most once per screen refresh (144 Hz here). A steady 144 fps means "faster than needed", not "exactly this fast". What the frame times can prove is "smooth or not": record every frame's time and report the median, the 99th percentile and the worst frame, not a per-second average, which hides single slow frames. With vsync off the numbers look faster, but they mostly measure how fast the browser schedules frames, not the GPU (review round 2 of T8).
 - **One origin**: when the app, the API and the tiles come from the same host and port, the browser applies no cross-origin rules, and the app code uses the same paths everywhere.
 

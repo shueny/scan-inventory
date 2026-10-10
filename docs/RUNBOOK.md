@@ -55,7 +55,7 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 | harness | CI runs the gate on PRs; smoke test runs in CI | green CI on the harness PR | done (PR #4) |
 | T6 review queue | demo steps 6 and 7 work; every issue type from PRD 5.6 can be resolved | contract tests per resolution; e2e resolves an issue; browser check on real data | done (PR #5) |
 | T7 dashboard + export | demo steps 8 and 9 work in both modes | unit tests for `domain/summary.ts`, `domain/exportCsv.ts`; e2e downloads the CSV (static); browser check in api mode | done (PR #6) |
-| T8 polish + docs | fresh clone + README reproduces the demo; one Playwright smoke of the demo path; recorded performance numbers | README steps run from a clean clone; e2e covers the demo path | in progress |
+| T8 polish + docs | fresh clone + README reproduces the demo; one Playwright smoke of the demo path; recorded performance numbers | README steps run from a clean clone; e2e covers the demo path | done (PR #7) |
 | T9 demo deployment | demo mode UI (PRD 8.7); tiles on R2 under a versioned path; Pages deploy workflow; Range request returns 206; README links the demo | code + scripts merged; owner runs the account steps in `docs/DEPLOY.md` | not started |
 
 ## Owner-only steps (collected here as they come up)
@@ -135,3 +135,6 @@ None yet.
   committed), 2 low. Fixed: `web/perf/measure-orbit.mjs` committed (`pnpm --dir web perf`),
   README reports vsync-on frame times (144 Hz held, worst 8.8 ms, 0 frames over 33 ms) with
   what they cannot show; index.html no-cache; e2e hook removed on unmount, pick method read-only.
+- 2026-10-10: T8 review round 3 (last): CI green on fae7a44, 0 high, 0 medium, 4 low (perf
+  script argument with pnpm's "--", gzip level, a point count wording, load-time precision).
+  All fixed. Loop closed.

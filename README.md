@@ -177,7 +177,7 @@ Measured on 2026-10-10 on a MacBook Air M3 (24 GB) with an external 144 Hz displ
 - **It holds the display's refresh rate everywhere:** 6.9 ms is one frame at 144 Hz. The PRD target is 30 fps (33 ms per frame), and no frame came close to it.
 - **What this does not show:** the frame interval does not show how much GPU headroom is left; it answers "does it stay smooth".
 - **The 3M budget was never reached:** the loader draws a tile only when it covers enough pixels, so at most about 370k points were drawn.
-- **Load time:** first points appear 1.6–4.8 s after opening the page locally. The first screen downloads about 0.3 MB of tile data (metadata, hierarchy, root tile) plus the app: 508 KB of gzipped JavaScript (budget 1 MB).
+- **Load time:** first points appeared 1.6–4.8 s after opening the page locally (3 runs; the `?stats` overlay updates once a second, so each value may be up to 1 s late). The first screen downloads about 0.3 MB of tile data (metadata, hierarchy, root tile) plus the app: about 500 KB of gzipped JavaScript (budget 1 MB).
 
 ## Known limitations
 
