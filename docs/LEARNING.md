@@ -367,7 +367,7 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 
 ### Why this way
 
-[ADR 0015](adr/0015-demo-hosting-cloudflare.md) (proposed): Pages + private R2 through a Function, behind Access; deploy by CI, data by hand.
+[ADR 0015](adr/0015-demo-hosting-cloudflare.md) (accepted; the demo stays NORA only, no upload): Pages + private R2 through a Function, behind Access; deploy by CI, data by hand.
 
 ### Quiz
 

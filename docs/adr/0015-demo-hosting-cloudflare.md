@@ -1,6 +1,6 @@
 # 0015 · Public demo on Cloudflare Pages, data from a private R2 bucket, behind Access
 
-Status: proposed (owner chose Cloudflare Pages + Access, 2026-10-09; details to confirm) · 2026-10-10 · Task T9
+Status: accepted (owner, 2026-10-10) · 2026-10-10 · Task T9
 
 ## Context
 
@@ -19,9 +19,11 @@ PRD 6.2 puts the demo site on a static host and the tiles in a public R2 bucket.
 2. Pages behind Access + a public `r2.dev` bucket for the tiles (PRD 6.2 as written). The tiles would be open to anyone who finds the URL, `r2.dev` is rate-limited, and CORS is needed.
 3. Pages + R2 on a custom domain behind Access. This needs a domain on Cloudflare (cost, setup); otherwise it is the cleanest.
 
-## Decision (proposed)
+## Decision
 
 Option 1.
+
+- **The demo stays NORA only** (owner, 2026-10-10). It shows this one plant with its 13 % sample and has no scan switcher and no upload. Uploading new scans stays out of scope (PRD section 4, "Out of scope"). That keeps the demo free of any hosted backend, database or job queue, and of any storage beyond the free R2 tier. Uploads, if they ever come, belong to the local full mode and need a PRD change first.
 
 - `web/functions/r2/[[path]].ts` serves `/r2/<key>` from the bucket bound as `DEMO_DATA`. GET and HEAD only, and keys are checked against `..`. The Range header becomes an explicit range for R2, and `Content-Range` is built from the range R2 says it returned, so headers and body always agree. The answers are 206, 416 (also when R2 refuses a start past the end), 304 on `If-None-Match` (the only condition passed on), 404 and 405. The logic is in `web/cloudflare/r2Response.ts`, unit-tested, and the Function is tested over HTTP on the Cloudflare runtime (`web/e2e/r2.spec.ts`).
 - `web/public/_routes.json` sends only `/r2/*` to the Function, so the app's own files stay free static assets.
@@ -38,4 +40,5 @@ Option 1.
 - No account, password or token is in the repo; `docs/DEPLOY.md` lists the owner's steps, which need the owner's Cloudflare login.
 - Every tile range is a Function request: a close-up view needs about 50, so the 100,000 a day allow roughly a few hundred visits a day. That is enough for invited reviewers; for a public launch, option 3 (custom domain, edge cache) would be better.
 - Making the demo public later means removing the Access apps; nothing in the code changes.
+- Running cost is zero within the free plans: Pages (static files), R2 (about 0.4 GB of 10 GB), Functions (100,000 requests a day), Access (up to 50 users). The FastAPI service and PostgreSQL run only on the owner's machine. R2 needs a payment method on file, but nothing is charged inside the free tier.
 - PRD 6.2's "public R2 bucket with CORS" and T9's "verify with a curl Range request" become: private bucket, same origin, and a Range check through Access (a browser check in DevTools, or `curl` with an Access service token).

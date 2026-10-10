@@ -70,8 +70,8 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
   7. Set `VITE_DEMO_VIDEO_URL`, and add the live address and the video link to the README.
   8. The T9 checks on the live demo (DEPLOY step 10): the demo script in Chrome and in Firefox,
      and first points within about 5 s on a normal connection.
-- T9: confirm ADR 0015 (data through a Function behind Access, no custom domain) and the About
-  panel's diagram (a three-box picture rather than a full architecture drawing).
+- T9: confirm the About panel's diagram (a three-box picture rather than a full architecture
+  drawing). ADR 0015 was accepted on 2026-10-10, with the demo kept to NORA only and no upload.
 
 ## Proposals for the owner (not done; no silent scope growth)
 
@@ -175,3 +175,5 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 - 2026-10-10: T9 code merged (PR #8, CI green on aacfcd1). The run T6 to T9 is finished on the
   code side. Left for the owner: the steps in docs/DEPLOY.md (step 10 holds the live T9 checks)
   and the proposed ADRs 0012 to 0015.
+- 2026-10-10: owner accepted ADR 0015 and decided the demo stays NORA only, with no upload, so it
+  needs no hosted backend or paid storage.
