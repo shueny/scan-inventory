@@ -8,6 +8,11 @@ RUN pnpm install --frozen-lockfile
 COPY index.html tsconfig.json vite.config.ts vitest.contract.config.ts playwright.config.ts ./
 COPY src ./src
 COPY e2e ./e2e
+# `pnpm build` also type-checks the Pages Function (functions/, which imports cloudflare/),
+# and Vite copies public/ (the no-WebGL screenshot) into dist.
+COPY functions ./functions
+COPY cloudflare ./cloudflare
+COPY public ./public
 ENV VITE_DATA_MODE=api VITE_API_BASE_URL=/api VITE_TILES_BASE_URL=/potree/nora
 RUN pnpm build
 
