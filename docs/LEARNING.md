@@ -310,13 +310,13 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
   - while orbiting with up to 373k points drawn, it holds the 144 Hz display rate (median 6.9 ms, worst 8.8 ms, no frame over 33 ms);
   - first points after 1.6–4.8 s;
   - JS bundle 508 KB gzipped.
-  The level-of-detail rule kept the points drawn at about 370k, so the 3M budget was never reached.
+  The level-of-detail rule kept the points drawn at about 370k, so the 3M budget was never reached. (Superseded by T10: with `minNodePixelSize` 50 the budget is reached at mid zoom, and first points were re-measured; see [ADR 0016](adr/0016-point-detail-and-shape.md).)
 - The Playwright smoke test now covers demo steps 3 to 9 on the fixture plant, including clicking an object in 3D (step 4); it fails if picking is switched off.
 
 ### Key concepts
 
 - **Reproducibility is tested, not assumed**: a README is only right if someone (or a script) follows it from a clean clone. The check runs each step and records its exit code and duration.
-- **Level of detail**: the loader draws an octree node only when it would cover enough pixels. From far away the whole plant is mostly the root node (13k of the 17k points drawn); zooming in fetches finer nodes with Range requests. Speed comes from not loading what you cannot see.
+- **Level of detail**: the loader draws an octree node only when it would cover enough pixels (T10 states the exact rule: the child's projected bounding-sphere radius in device pixels against `minNodePixelSize`). From far away the whole plant is mostly the root node (13k of the 17k points drawn); zooming in fetches finer nodes with Range requests. Speed comes from not loading what you cannot see.
 - **Frame rate is capped by the display**: browsers draw at most once per screen refresh (144 Hz here). A steady 144 fps means "faster than needed", not "exactly this fast". What the frame times can prove is "smooth or not": record every frame's time and report the median, the 99th percentile and the worst frame, not a per-second average, which hides single slow frames. With vsync off the numbers look faster, but they mostly measure how fast the browser schedules frames, not the GPU (review round 2 of T8).
 - **One origin**: when the app, the API and the tiles come from the same host and port, the browser applies no cross-origin rules, and the app code uses the same paths everywhere.
 

@@ -36,7 +36,7 @@ The whole-plant view in the browser pane (1440 × 900, 1×) went from 13,105 poi
 
 ## First points
 
-Does the extra detail delay the first picture? The app was built for production on the 13 % tiles (`vite build`, served by `vite preview`, whole-plant view, 1440 × 900, 1×). Each run used a fresh browser context with the cache off and Chrome's network throttling:
+Does the extra detail delay the first picture? The app was built for production on the 13 % tiles (`vite build`, served by `vite preview`, whole-plant view, 1440 × 900, 1×). Each run used a fresh browser context with the cache off and Chrome's network throttling. The clock started just before navigation, so it includes downloading the app; "first points" is the moment the viewer first reports a drawn point (`window.__scanViewer.stats.visiblePoints > 0` through the `?e2e` hook, polled every 100 ms, so up to 0.1 s late):
 
 | connection | first points (3 runs) | 10 s later |
 |---|---|---|
@@ -44,6 +44,6 @@ Does the extra detail delay the first picture? The app was built for production 
 | 20 Mbit/s, 40 ms latency | 0.79 s | 26 tiles, 209,427 points |
 | 5 Mbit/s, 80 ms latency | 2.23–2.26 s | 26 tiles, 209,427 points |
 
-The root tile still arrives first, so first points stay well inside the PRD's 5 s. The finer tiles of the first view (about 4.4 MB) arrive within 10 s even at 5 Mbit/s. These runs leave out the live demo's Access check and the Pages Function; the owner's DEPLOY step 10 checks first points on the live address.
+Only the 50 px setting was measured; there is no 200 px row. By construction the setting cannot delay first points: the loader considers a child only after its parent has loaded, so the root tile is always fetched first. First points stay well inside the PRD's 5 s. The finer tiles of the first view (about 4.4 MB) arrive within 10 s even at 5 Mbit/s. These runs leave out the live demo's Access check and the Pages Function; the owner's DEPLOY step 10 checks first points on the live address.
 
 A first attempt against `vite dev` timed out under throttling: in development the app is hundreds of unbundled module files, so that setup does not represent the demo.

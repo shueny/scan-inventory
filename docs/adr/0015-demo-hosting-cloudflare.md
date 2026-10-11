@@ -38,7 +38,7 @@ Option 1.
 ## Consequences
 
 - No account, password or token is in the repo; `docs/DEPLOY.md` lists the owner's steps, which need the owner's Cloudflare login.
-- Every tile range is a Function request. Since [ADR 0016](0016-point-detail-and-shape.md) (finer detail), a view needs about 180 to 250 tiles, so the 100,000 a day allow roughly 100 visits a day, a rough, cautious estimate (before: about 50 tiles a view and a few hundred visits). That is enough for invited reviewers; for a public launch, option 3 (custom domain, edge cache) would be better.
+- Every tile range is a Function request. Since [ADR 0016](0016-point-detail-and-shape.md) (finer detail), a zoomed-in view needs about 180 to 250 tiles (the opening whole-plant view 26), so the 100,000 a day allow roughly 100 visits a day, a rough, cautious estimate (before: about 50 tiles a view and a few hundred visits). That is enough for invited reviewers; for a public launch, option 3 (custom domain, edge cache) would be better.
 - Making the demo public later means removing the Access apps; nothing in the code changes.
 - Running cost is zero within the free plans: Pages (static files), R2 (about 0.4 GB of 10 GB), Functions (100,000 requests a day), Access (up to 50 users). The FastAPI service and PostgreSQL run only on the owner's machine. R2 needs a payment method on file, but nothing is charged inside the free tier.
 - PRD 6.2's "public R2 bucket with CORS" and T9's "verify with a curl Range request" become: private bucket, same origin, and a Range check through Access (a browser check in DevTools, or `curl` with an Access service token).
