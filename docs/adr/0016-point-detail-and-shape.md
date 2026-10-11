@@ -29,10 +29,10 @@ Point shape: square (the loader default), circle, or paraboloid (a circle with d
 ## Decision
 
 - `minNodePixelSize = 50` and circular points.
-- Point size stays adaptive, with size 1 and a minimum of 2 px.
+- Point size stays adaptive, with size 1 and a minimum of 2 px (size amended to 1.5, see Amendment).
 - The settings live in `web/src/viewer/pointStyle.ts` (`POINT_STYLE`, `applyPointStyle`), and `Viewer.load` applies them to the loaded cloud.
 - A unit test checks the settings.
-- A Playwright test checks that the real loaded cloud carries them and draws more than the root tile on the fixture plant (`Viewer.pointStyle`, through the `?e2e` hook). With 200 px the same test sees a single tile and fails.
+- A Playwright test checks that the real loaded cloud carries them (50 px, circle, and since the amendment size 1.5) and draws more than the root tile on the fixture plant (`Viewer.pointStyle`, through the `?e2e` hook). With 200 px the same test sees a single tile and fails.
 
 ## Consequences
 
@@ -43,7 +43,7 @@ Point shape: square (the loader default), circle, or paraboloid (a circle with d
 - **Picking:** the GPU pick draws the same round points, so the corners of the old squares no longer count as hits. The pick reads a 9 × 9 CSS-pixel window (18 × 18 device pixels on a 2× screen) and takes the hit nearest its centre, so a click near a point still finds it; the Playwright pick test passes unchanged.
 - **Full local mode (151.9M points):**
   - The 3M budget is now reached at mid zoom (before: at most 373k points).
-  - It still holds 144 Hz: median 6.9 ms, worst 13.9 ms, no frame over 33 ms. The README performance table is updated.
+  - It still holds 144 Hz: median 6.9 ms, worst 13.9 ms, no frame over 33 ms (measured with size 1, before the amendment; the README table now shows the size 1.5 run).
 - **Slower machines** draw more points than before. The budget still caps the work at 3M points. If a weaker GPU struggles, lower the budget or raise `minNodePixelSize`; both are one-line changes in `pointStyle.ts` and `config.ts`.
 
 ## Amendment: point size 1.5 (owner, 2026-10-11)
@@ -54,7 +54,7 @@ Options compared at 2× pixel ratio (like a Retina screen), on the 13 % tiles; i
 
 - size 1 (as decided above): specks on near beams and the floor;
 - **size 1.5 (chosen)**: far fewer specks, pipes keep their shape;
-- size 2: solid, but valves and thin pipes start to merge;
+- size 2: solid, but valves and thin pipes start to merge (judged by eye at full resolution; the difference from 1.5 is small);
 - minimum size 3 px instead of 2: no visible change up close; it only affects tiny far points.
 
-In the whole-plant view all four look the same. Larger points mean more pixels to draw. On the full tiles, with up to 3.0M points drawn, the M3 still holds 144 Hz: median 6.9 ms, worst 7.9 ms, no frame over 33 ms (README performance table).
+In the whole-plant view all four looked the same by eye. The shader explains why: a point's size is `max(minSize, size × base)`, where the base comes from the tile's point spacing and the distance. Far away the base is below the 2 px minimum, so `size` has no effect there (only points whose base is between about 1.3 and 2 px grow). Up close the base is well above the minimum, so `size` scales it. For the same reason a minimum of 3 px only changes far points. Larger points mean more pixels to draw. On the full tiles, with up to 3.0M points drawn, the M3 still holds 144 Hz: median 6.9 ms, worst 7.9 ms, no frame over 33 ms (README performance table).

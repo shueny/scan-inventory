@@ -418,6 +418,7 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
   - Round points cannot tile a surface: four circles leave a gap that a square would cover.
   - Light gray points in front of a white background make those gaps easy to see, and the 13 % sample makes them larger up close.
   - Size 1.5 closes most gaps; size 2 starts to merge valves and thin pipes.
+  - The shader draws a point at `max(minSize, size × base)`. Far away the base is under the 2 px minimum, so a bigger `size` changes nothing there; up close it scales the points.
 - **What it was not:** memory or performance. The close-up reached the 3M point budget and still drew at 144 fps.
 
 #### Quiz

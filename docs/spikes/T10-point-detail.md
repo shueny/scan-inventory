@@ -55,3 +55,7 @@ Added the same day, after the owner saw white specks on near surfaces in the liv
 At this close-up the loader reached the point budget: 2,996,334 points. It held 144 fps throughout, so the specks are not a memory or performance limit. They are the gaps between round points. Size 1.5 closes most of them; size 2 starts to merge small parts. Owner's choice: 1.5 ([ADR 0016](../adr/0016-point-detail-and-shape.md#amendment-point-size-15-owner-2026-10-11)).
 
 ![Close-up, four point sizes](img/t10-size-near.jpg)
+
+The label "now" in the image means the setting before this change (size 1).
+
+The 3M budget capped this close-up. A higher budget would draw more points here, so the gaps would shrink. The cost would be more GPU memory, more tile downloads and, on the demo, more Function requests.

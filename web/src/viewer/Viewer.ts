@@ -188,11 +188,17 @@ export class Viewer {
   }
 
   /** The loaded cloud's detail settings and how many tiles it draws (browser tests, `?e2e`). */
-  get pointStyle(): { minNodePixelSize: number; shape: number; visibleTiles: number } | null {
+  get pointStyle(): {
+    minNodePixelSize: number;
+    shape: number;
+    size: number;
+    visibleTiles: number;
+  } | null {
     return this.cloud
       ? {
           minNodePixelSize: this.cloud.minNodePixelSize,
           shape: this.cloud.material.shape,
+          size: this.cloud.material.size,
           visibleTiles: this.cloud.visibleNodes.length,
         }
       : null;
