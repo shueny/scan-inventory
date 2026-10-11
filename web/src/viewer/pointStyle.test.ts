@@ -19,7 +19,7 @@ describe("applyPointStyle", () => {
     expect(cloud.material).toEqual({
       shape: PointShape.CIRCLE,
       pointSizeType: PointSizeType.ADAPTIVE,
-      size: 1,
+      size: 1.5,
       minSize: 2,
     });
   });

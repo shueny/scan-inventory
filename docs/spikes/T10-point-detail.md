@@ -47,3 +47,11 @@ Does the extra detail delay the first picture? The app was built for production 
 Only the 50 px setting was measured; there is no 200 px row. By construction the setting cannot delay first points: the loader considers a child only after its parent has loaded, so the root tile is always fetched first. First points stay well inside the PRD's 5 s. The finer tiles of the first view (about 4.4 MB) arrive within 10 s even at 5 Mbit/s. These runs leave out the live demo's Access check and the Pages Function; the owner's DEPLOY step 10 checks first points on the live address.
 
 A first attempt against `vite dev` timed out under throttling: in development the app is hundreds of unbundled module files, so that setup does not represent the demo.
+
+## Point size
+
+Added the same day, after the owner saw white specks on near surfaces in the live demo. The same throwaway script ran on the 13 % tiles with Playwright's `deviceScaleFactor: 2`, which matches a Retina screen, with 50 px detail and round points. It changed `material.size` and `material.minSize` on the running viewer.
+
+At this close-up the loader reached the point budget: 2,996,334 points. It held 144 fps throughout, so the specks are not a memory or performance limit. They are the gaps between round points. Size 1.5 closes most of them; size 2 starts to merge small parts. Owner's choice: 1.5 ([ADR 0016](../adr/0016-point-detail-and-shape.md#amendment-point-size-15-owner-2026-10-11)).
+
+![Close-up, four point sizes](img/t10-size-near.jpg)

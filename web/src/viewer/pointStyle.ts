@@ -8,13 +8,15 @@ import { PointShape, PointSizeType } from "@pnext/three-loader";
  * 200, kept the whole-plant view at the root tile (13k points of a 3M budget); 50 draws
  * 10 to 16 times the points in far views, at 144 Hz on the MacBook Air M3. On the 13 % demo
  * data the opening view is 26 tiles (about 4.4 MB); zoomed views are 22–29 MB.
- * Circles instead of squares give smoother edges at no measurable cost.
+ * Circles instead of squares give smoother edges at no measurable cost. Circles leave gaps
+ * between neighbours that squares would cover, which showed as white specks on near surfaces,
+ * so the points are drawn 1.5 times the loader's base size.
  */
 export const POINT_STYLE = {
   minNodePixelSize: 50,
   shape: PointShape.CIRCLE,
   sizeType: PointSizeType.ADAPTIVE,
-  size: 1,
+  size: 1.5,
   minSize: 2,
 } as const;
 

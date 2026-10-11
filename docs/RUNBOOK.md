@@ -197,3 +197,6 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
   round 3 on 6a4a799 (last): 0 high, 1 medium (the "before" request count was an old estimate,
   not the measured 11-29 tiles), 3 low. Fixed after it; checked by the gate and CI, not by a
   fourth review.
+- 2026-10-11: T10 merged (PR #13) and PR #12 (compose web image) merged. Owner saw white specks
+  up close on the live demo (Retina): gaps between round points. Compared sizes at 2x; owner chose
+  point size 1.5 (ADR 0016 amendment), branch t10-point-size.

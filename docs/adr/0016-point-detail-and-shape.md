@@ -1,6 +1,6 @@
 # 0016 · Point detail (minNodePixelSize 50) and round points
 
-Status: accepted (owner chose 50 px and circles, 2026-10-11) · 2026-10-11 · Task T10 (added by the owner after T9)
+Status: accepted (owner chose 50 px and circles, 2026-10-11; point size 1.5 added the same day, see Amendment) · 2026-10-11 · Task T10 (added by the owner after T9)
 
 ## Context
 
@@ -45,3 +45,16 @@ Point shape: square (the loader default), circle, or paraboloid (a circle with d
   - The 3M budget is now reached at mid zoom (before: at most 373k points).
   - It still holds 144 Hz: median 6.9 ms, worst 13.9 ms, no frame over 33 ms. The README performance table is updated.
 - **Slower machines** draw more points than before. The budget still caps the work at 3M points. If a weaker GPU struggles, lower the budget or raise `minNodePixelSize`; both are one-line changes in `pointStyle.ts` and `config.ts`.
+
+## Amendment: point size 1.5 (owner, 2026-10-11)
+
+After the change went live, the owner saw white specks on near gray beams and on the floor. The cause was the circles themselves. Squares can cover a surface edge to edge, but four round points leave a gap between them, and on light gray surfaces in front of the white background those gaps show as specks. The sparse 13 % sample makes the gaps larger up close.
+
+Options compared at 2× pixel ratio (like a Retina screen), on the 13 % tiles; image in the [spike](../spikes/T10-point-detail.md#point-size):
+
+- size 1 (as decided above): specks on near beams and the floor;
+- **size 1.5 (chosen)**: far fewer specks, pipes keep their shape;
+- size 2: solid, but valves and thin pipes start to merge;
+- minimum size 3 px instead of 2: no visible change up close; it only affects tiny far points.
+
+In the whole-plant view all four look the same. Larger points mean more pixels to draw. On the full tiles, with up to 3.0M points drawn, the M3 still holds 144 Hz: median 6.9 ms, worst 7.9 ms, no frame over 33 ms (README performance table).

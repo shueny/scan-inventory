@@ -409,3 +409,19 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 1. The point budget is 3 million, yet the whole-plant view drew only 13,105 points before this change. What stopped the loader from loading more?
 2. If you lowered `minNodePixelSize` from 50 to 30, what would change for a demo visitor? Name the frame rate, the download, and the Cloudflare free plan.
 3. Why does the same setting give fewer points on a 1× external monitor than on a Retina screen?
+
+### Follow-up: point size 1.5
+
+- **What changed:** points are drawn 1.5 times the loader's base size (`POINT_STYLE.size`), recorded as an amendment to [ADR 0016](adr/0016-point-detail-and-shape.md).
+- **Why:**
+  - After the change went live, near gray beams and the floor showed white specks.
+  - Round points cannot tile a surface: four circles leave a gap that a square would cover.
+  - Light gray points in front of a white background make those gaps easy to see, and the 13 % sample makes them larger up close.
+  - Size 1.5 closes most gaps; size 2 starts to merge valves and thin pipes.
+- **What it was not:** memory or performance. The close-up reached the 3M point budget and still drew at 144 fps.
+
+#### Quiz
+
+1. Why did switching from square to round points create white specks on near surfaces?
+2. Why does making points bigger help up close but not change the whole-plant view?
+3. The close-up drew 2,996,334 points. Which setting capped that number, and what would happen if it were raised?

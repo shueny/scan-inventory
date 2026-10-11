@@ -180,14 +180,14 @@ CI runs the same steps on every pull request. The process is in [docs/RUNBOOK.md
 
 ## Performance
 
-Measured on 2026-10-11 on a MacBook Air M3 (24 GB) with an external 144 Hz display. The browser was Chromium in a visible window (WebGL on Metal), with the dev server serving the full tiles (151.9M points) and a 3M point budget. The script is [`web/perf/measure-orbit.mjs`](web/perf/measure-orbit.mjs) (`pnpm --dir web perf`). For each view it orbits the camera for 6 s and records the time between frames.
+Measured on 2026-10-11 (round points, size 1.5) on a MacBook Air M3 (24 GB) with an external 144 Hz display. The browser was Chromium in a visible window (WebGL on Metal), with the dev server serving the full tiles (151.9M points) and a 3M point budget. The script is [`web/perf/measure-orbit.mjs`](web/perf/measure-orbit.mjs) (`pnpm --dir web perf`). For each view it orbits the camera for 6 s and records the time between frames.
 
 | view | points drawn (most) | median frame | 99th percentile | worst frame | frames over 33 ms |
 |---|---|---|---|---|---|
-| whole plant | 273k | 6.9 ms | 7.7 ms | 7.8 ms | 0 |
-| mid zoom | 3.0M | 6.9 ms | 7.7 ms | 13.9 ms | 0 |
-| close-up | 2.2M | 6.9 ms | 7.7 ms | 7.8 ms | 0 |
-| very close | 2.3M | 6.9 ms | 7.7 ms | 7.8 ms | 0 |
+| whole plant | 300k | 6.9 ms | 7.7 ms | 7.8 ms | 0 |
+| mid zoom | 3.0M | 6.9 ms | 7.8 ms | 7.9 ms | 0 |
+| close-up | 2.0M | 6.9 ms | 7.7 ms | 7.8 ms | 0 |
+| very close | 2.5M | 6.9 ms | 7.8 ms | 7.9 ms | 0 |
 
 - **It holds the display's refresh rate everywhere:** 6.9 ms is one frame at 144 Hz. The PRD target is 30 fps (33 ms per frame), and no frame came close to it.
 - **What this does not show:** the frame interval does not show how much GPU headroom is left; it answers "does it stay smooth".
