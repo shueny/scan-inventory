@@ -390,10 +390,10 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 
 - **Level of detail (LOD) in an octree:**
   - The tiles form a tree. The root holds a thin sample of the whole scan, and each child holds more points for a smaller box.
-  - The loader walks the tree from the root, and only fetches a child when its parent covers at least `minNodePixelSize` pixels on screen. It stops when it reaches the point budget.
+  - The loader walks the tree from the root. For each child tile it projects the child's bounding sphere on the screen and fetches the child only if the projected radius is at least `minNodePixelSize` device pixels (half the canvas height × the pixel ratio goes into that projection). It stops when it reaches the point budget.
 - **Why the demo looked blurry:**
   - With the loader's default of 200 px, a view of the whole plant never refined past the root.
-  - That gave 13k to 92k points out of a 3M budget.
+  - That gave 13k points out of a 3M budget.
   - Large square points then covered the gaps.
 - **Detail costs download, not frame rate:**
   - Every setting held 144 Hz on the M3.
@@ -402,7 +402,7 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 
 ### Why this way
 
-[ADR 0016](adr/0016-point-detail-and-shape.md) (accepted): 50 px gives about ten times the points in far views, for 22–29 MB of tiles and 180–250 requests per view. That still fits the free plan for invited reviewers. 30 px would download 50+ MB per view. Circles cost nothing extra.
+[ADR 0016](adr/0016-point-detail-and-shape.md) (accepted): 50 px gives 10 to 16 times the points in far views, for 22–29 MB of tiles and 180–250 requests per view. That still fits the free plan for invited reviewers. 30 px would download 50+ MB per view. Circles cost nothing extra.
 
 ### Quiz
 

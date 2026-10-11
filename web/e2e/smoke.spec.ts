@@ -163,11 +163,18 @@ test("the loaded cloud streams detail from 50 px tiles and draws round points (A
   page,
 }) => {
   await open(page, "/?stats&e2e");
-  const style = await page.evaluate(
-    () => (window as unknown as { __scanViewer: { pointStyle: unknown } }).__scanViewer.pointStyle,
-  );
+  type Style = { minNodePixelSize: number; shape: number; visibleTiles: number };
+  const style = () =>
+    page.evaluate(
+      () => (window as unknown as { __scanViewer: { pointStyle: Style } }).__scanViewer.pointStyle,
+    );
   // PointShape.CIRCLE is 1 in @pnext/three-loader.
-  expect(style).toEqual({ minNodePixelSize: 50, shape: 1 });
+  expect(await style()).toMatchObject({ minNodePixelSize: 50, shape: 1 });
+  // The effect, not only the setting: the default view refines past the root tile. With the
+  // loader's default of 200 px it draws the root alone.
+  await expect
+    .poll(async () => (await style()).visibleTiles, { timeout: 15_000 })
+    .toBeGreaterThan(1);
 });
 
 test("demo step 4: clicking an object in 3D selects exactly that object, by GPU pick", async ({

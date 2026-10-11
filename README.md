@@ -192,7 +192,7 @@ Measured on 2026-10-11 on a MacBook Air M3 (24 GB) with an external 144 Hz displ
 - **It holds the display's refresh rate everywhere:** 6.9 ms is one frame at 144 Hz. The PRD target is 30 fps (33 ms per frame), and no frame came close to it.
 - **What this does not show:** the frame interval does not show how much GPU headroom is left; it answers "does it stay smooth".
 - **Detail:** the loader refines a tile once it covers 50 pixels on screen ([ADR 0016](docs/adr/0016-point-detail-and-shape.md)). With the loader's default of 200 pixels (until 2026-10-11) at most about 370k points were drawn, and the whole plant showed only 17k; now mid zoom reaches the 3M budget.
-- **Load time:** first points appeared 1.6–4.8 s after opening the page locally (3 runs; the `?stats` overlay updates once a second, so each value may be up to 1 s late). The first screen downloads about 0.3 MB of tile data (metadata, hierarchy, root tile) plus the app: about 500 KB of gzipped JavaScript (budget 1 MB).
+- **Load time:** first points appear once the app (about 500 KB of gzipped JavaScript, budget 1 MB) and the first 0.3 MB of tile data (metadata, hierarchy, root tile) have arrived. With the production build on the 13 % demo tiles that took 0.2–0.3 s locally, 0.8 s at 20 Mbit/s and 2.2 s at 5 Mbit/s (2026-10-11, [spike](docs/spikes/T10-point-detail.md)). The rest of the first view then streams in: about 4–6 MB of tiles.
 
 ## Known limitations
 

@@ -6,16 +6,11 @@ Status: accepted (owner chose 50 px and circles, 2026-10-11) · 2026-10-11 · Ta
 
 The owner found the live demo blurry. Measurements are in [docs/spikes/T10-point-detail.md](../spikes/T10-point-detail.md).
 
-The loader (`@pnext/three-loader`) only fetches a tile's finer children once the tile covers `minNodePixelSize` pixels on screen. The viewer never set this value, so the loader's default of 200 px applied. Views of the whole plant drew only the coarsest tiles:
-
-- 13,105 points (one tile) at 1× pixel ratio;
-- 92,210 points at 2×.
-
-The point budget is 3,000,000. The points were drawn large and square to cover the gaps, so the picture looked blocky.
+The loader (`@pnext/three-loader`) streams an octree: a child tile is fetched only if its bounding sphere, projected on the screen, has a radius of at least `minNodePixelSize` device pixels (the loader uses half the canvas height × the pixel ratio). The viewer never set this value, so the loader's default of 200 px applied. The whole-plant view drew only the root tile, 13,105 points of a 3,000,000 point budget (1440 × 900 window, 1× pixel ratio). The points were drawn large and square to cover the gaps, so the picture looked blocky.
 
 ## Options
 
-On the 13 % demo tiles, MacBook Air M3, 144 Hz:
+On the 13 % demo tiles, MacBook Air M3, 144 Hz display, 1× pixel ratio, for the two camera views in the spike images (the wider one shows most of the plant, not all of it):
 
 | `minNodePixelSize` | points, wider / closer view | tiles per view | tile data per view |
 |---|---|---|---|
@@ -37,15 +32,16 @@ Point shape: square (the loader default), circle, or paraboloid (a circle with d
 - Point size stays adaptive, with size 1 and a minimum of 2 px.
 - The settings live in `web/src/viewer/pointStyle.ts` (`POINT_STYLE`, `applyPointStyle`), and `Viewer.load` applies them to the loaded cloud.
 - A unit test checks the settings.
-- A Playwright test checks that the real loaded cloud carries them (`Viewer.pointStyle`, through the `?e2e` hook).
+- A Playwright test checks that the real loaded cloud carries them and draws more than the root tile on the fixture plant (`Viewer.pointStyle`, through the `?e2e` hook). With 200 px the same test sees a single tile and fails.
 
 ## Consequences
 
 - **Demo:**
-  - About ten times more points in far views, at 144 Hz.
+  - 10 to 16 times more points in far views (whole plant: 13,105 points in 1 tile → 209,427 points in 26 tiles), at 144 Hz.
   - A view downloads about 22–29 MB of tiles instead of 2–6 MB.
   - A view needs 180–250 Function requests instead of about 50, so the free plan allows roughly 100 visits a day instead of a few hundred. [ADR 0015](0015-demo-hosting-cloudflare.md) and `docs/DEPLOY.md` are updated.
-- **First points:** unchanged. The root tile still comes first, and finer tiles stream in after it.
+- **First points:** the root tile (about 0.3 MB) still comes first, and finer tiles stream in after it. Measured on throttled connections in the spike (section "First points").
+- **Picking:** the GPU pick draws the same round points, so the corners of the old squares no longer count as hits. The pick reads a 9 × 9 pixel window and takes the hit nearest its centre, so a click near a point still finds it; the Playwright pick test passes unchanged.
 - **Full local mode (151.9M points):**
   - The 3M budget is now reached at mid zoom (before: at most 373k points).
   - It still holds 144 Hz: median 6.9 ms, worst 13.9 ms, no frame over 33 ms. The README performance table is updated.

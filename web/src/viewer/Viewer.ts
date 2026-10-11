@@ -187,10 +187,14 @@ export class Viewer {
     else this.setView(view);
   }
 
-  /** The loaded cloud's detail and point settings (browser tests, `?e2e`). */
-  get pointStyle(): { minNodePixelSize: number; shape: number } | null {
+  /** The loaded cloud's detail settings and how many tiles it draws (browser tests, `?e2e`). */
+  get pointStyle(): { minNodePixelSize: number; shape: number; visibleTiles: number } | null {
     return this.cloud
-      ? { minNodePixelSize: this.cloud.minNodePixelSize, shape: this.cloud.material.shape }
+      ? {
+          minNodePixelSize: this.cloud.minNodePixelSize,
+          shape: this.cloud.material.shape,
+          visibleTiles: this.cloud.visibleNodes.length,
+        }
       : null;
   }
 

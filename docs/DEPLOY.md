@@ -139,6 +139,6 @@ Afterwards:
 
 ## Limits to keep in mind
 
-- **Function requests:** the free plan allows 100,000 a day, and every tile read is one. A view needs about 180 to 250 tiles ([ADR 0016](adr/0016-point-detail-and-shape.md)), so a visit of a few views costs about 1,000 and the free plan allows roughly 100 visits a day. That is plenty for invited reviewers.
+- **Function requests:** the free plan allows 100,000 a day, and every tile read is one. A view needs about 180 to 250 tiles ([ADR 0016](adr/0016-point-detail-and-shape.md)), so a visit of a few views costs about 1,000 and the free plan allows roughly 100 visits a day (a rough, cautious estimate: tiles a visitor already loaded are not fetched again, and the few hierarchy and metadata requests are left out). That is plenty for invited reviewers.
 - **R2:** 10 GB of storage and 10 million reads a month are free, and egress costs nothing.
 - **New data:** upload it under `v2/` (`DATA_VERSION=v2 scripts/deploy/upload_demo_data.sh`), then set `VITE_DATA_VERSION=v2` and the `v2` paths in `web/.env.demo`. Visitors' saved review changes belong to `v1` and are not applied to the new data.

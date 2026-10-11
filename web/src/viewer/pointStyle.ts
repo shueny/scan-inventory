@@ -3,10 +3,11 @@ import { PointShape, PointSizeType } from "@pnext/three-loader";
 /**
  * How the point cloud is drawn and how much detail it streams (ADR 0016).
  *
- * `minNodePixelSize`: the loader only fetches a tile's finer children once the tile covers
- * at least this many pixels on screen. Its default, 200, kept far views at the coarsest
- * level (13k to 92k of a 3M budget); 50 loads about ten times the points there, at 144 Hz
- * on the MacBook Air M3, for about 22–29 MB of tiles per view on the 13 % demo data.
+ * `minNodePixelSize`: the loader fetches a child tile only if the child's bounding sphere,
+ * projected on the screen, has a radius of at least this many device pixels. Its default,
+ * 200, kept the whole-plant view at the root tile (13k points of a 3M budget); 50 draws
+ * 10 to 16 times the points in far views, at 144 Hz on the MacBook Air M3, for about
+ * 22–29 MB of tiles per view on the 13 % demo data.
  * Circles instead of squares give smoother edges at no measurable cost.
  */
 export const POINT_STYLE = {
