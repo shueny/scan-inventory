@@ -374,3 +374,38 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 1. A visitor's browser asks for `/r2/v1/potree/nora/octree.bin` with `Range: bytes=1000-1999`. Follow the request: what checks it, what runs, and what comes back (status and headers)?
 2. Why could the tiles not simply stay in a public R2 bucket, as the PRD first planned, once only invited people should see the demo?
 3. You upload a corrected `instances.json`. Why should it go under `v2/`, and what happens to the review changes a visitor made on `v1`?
+
+## T10 · Sharper points (added by the owner after T9)
+
+### What was built
+
+- The viewer now streams finer detail and draws round points ([ADR 0016](adr/0016-point-detail-and-shape.md)).
+- The settings are in `web/src/viewer/pointStyle.ts`:
+  - `minNodePixelSize` 50, where the loader's default is 200;
+  - circular, adaptive points.
+- A unit test checks the settings. A Playwright test checks them on the real loaded cloud.
+- [docs/spikes/T10-point-detail.md](spikes/T10-point-detail.md) has the comparison images and numbers.
+
+### Key concepts
+
+- **Level of detail (LOD) in an octree:**
+  - The tiles form a tree. The root holds a thin sample of the whole scan, and each child holds more points for a smaller box.
+  - The loader walks the tree from the root, and only fetches a child when its parent covers at least `minNodePixelSize` pixels on screen. It stops when it reaches the point budget.
+- **Why the demo looked blurry:**
+  - With the loader's default of 200 px, a view of the whole plant never refined past the root.
+  - That gave 13k to 92k points out of a 3M budget.
+  - Large square points then covered the gaps.
+- **Detail costs download, not frame rate:**
+  - Every setting held 144 Hz on the M3.
+  - What grows is the tile data per view and, on the demo, the number of Function requests.
+- **Pixel ratio matters:** the loader measures tiles in screen pixels, so a 1× external monitor gets less detail than a 2× Retina screen at the same threshold.
+
+### Why this way
+
+[ADR 0016](adr/0016-point-detail-and-shape.md) (accepted): 50 px gives about ten times the points in far views, for 22–29 MB of tiles and 180–250 requests per view. That still fits the free plan for invited reviewers. 30 px would download 50+ MB per view. Circles cost nothing extra.
+
+### Quiz
+
+1. The point budget is 3 million, yet the whole-plant view drew only 13,105 points before this change. What stopped the loader from loading more?
+2. If you lowered `minNodePixelSize` from 50 to 30, what would change for a demo visitor? Name the frame rate, the download, and the Cloudflare free plan.
+3. Why does the same setting give fewer points on a 1× external monitor than on a Retina screen?

@@ -159,6 +159,17 @@ test("demo steps 8 and 9: dashboard numbers and a CSV export with review status"
   expect(rows.find((r) => r.startsWith("1,PSV-1,"))).toMatch(/,confirmed$/);
 });
 
+test("the loaded cloud streams detail from 50 px tiles and draws round points (ADR 0016)", async ({
+  page,
+}) => {
+  await open(page, "/?stats&e2e");
+  const style = await page.evaluate(
+    () => (window as unknown as { __scanViewer: { pointStyle: unknown } }).__scanViewer.pointStyle,
+  );
+  // PointShape.CIRCLE is 1 in @pnext/three-loader.
+  expect(style).toEqual({ minNodePixelSize: 50, shape: 1 });
+});
+
 test("demo step 4: clicking an object in 3D selects exactly that object, by GPU pick", async ({
   page,
 }) => {

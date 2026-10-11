@@ -179,6 +179,10 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
   Access on both hostnames (one app, owner's email only), first deploy, GitHub secrets (deploy
   workflow green). Step 9: video link set in web/.env.demo. ESLint and Prettier now ignore
   web/.wrangler (local deploys left a temporary Worker bundle there that broke `make gate`).
+- 2026-10-11: T10 (added by the owner): the demo looked blurry because the loader's default
+  minNodePixelSize (200 px) kept far views at the root tile. Spike with images; owner chose 50 px
+  and circles (ADR 0016). Freed disk space first (removed the unused T2 tiles nora-5pct and
+  nora-voxel5mm, `pnpm store prune`): the disk had 154 MB left.
 - 2026-10-10: owner accepted ADRs 0012 (review queue), 0013 (dashboard and export: families,
   "SW - SE" as its own zone, rejected objects left out of the numbers) and 0014 (compose web
   service).

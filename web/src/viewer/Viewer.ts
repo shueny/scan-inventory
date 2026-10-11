@@ -1,6 +1,5 @@
 import {
   PointColorType,
-  PointSizeType,
   Potree,
   type IClassification,
   type PointCloudOctree,
@@ -13,6 +12,7 @@ import { easeInOutCubic, lerpView, viewForBox, type CameraView } from "../domain
 import { classColorTable, visibleClassFilter } from "../domain/classColors";
 import { pickByBoxes, type PickBox } from "../domain/pickBoxes";
 import type { ColorMode } from "../state/viewStore";
+import { applyPointStyle } from "./pointStyle";
 
 export interface ViewerOptions {
   tilesBaseUrl: string;
@@ -108,9 +108,7 @@ export class Viewer {
       cloud.dispose();
       return;
     }
-    cloud.material.size = 1;
-    cloud.material.minSize = 2;
-    cloud.material.pointSizeType = PointSizeType.ADAPTIVE;
+    applyPointStyle(cloud);
     this.cloud = cloud;
     this.scene.add(cloud);
     this.applyClasses();
@@ -187,6 +185,13 @@ export class Viewer {
     );
     if (animate) this.flyTo(view);
     else this.setView(view);
+  }
+
+  /** The loaded cloud's detail and point settings (browser tests, `?e2e`). */
+  get pointStyle(): { minNodePixelSize: number; shape: number } | null {
+    return this.cloud
+      ? { minNodePixelSize: this.cloud.minNodePixelSize, shape: this.cloud.material.shape }
+      : null;
   }
 
   /** How the last click was resolved: GPU point pick or the bounding-box fallback. */

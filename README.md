@@ -180,18 +180,18 @@ CI runs the same steps on every pull request. The process is in [docs/RUNBOOK.md
 
 ## Performance
 
-Measured on 2026-10-10 on a MacBook Air M3 (24 GB) with an external 144 Hz display. The browser was Chromium in a visible window (WebGL on Metal), with `docker compose up` serving the full tiles (151.9M points) and a 3M point budget. The script is [`web/perf/measure-orbit.mjs`](web/perf/measure-orbit.mjs) (`pnpm --dir web perf`). For each view it orbits the camera for 6 s and records the time between frames.
+Measured on 2026-10-11 on a MacBook Air M3 (24 GB) with an external 144 Hz display. The browser was Chromium in a visible window (WebGL on Metal), with the dev server serving the full tiles (151.9M points) and a 3M point budget. The script is [`web/perf/measure-orbit.mjs`](web/perf/measure-orbit.mjs) (`pnpm --dir web perf`). For each view it orbits the camera for 6 s and records the time between frames.
 
 | view | points drawn (most) | median frame | 99th percentile | worst frame | frames over 33 ms |
 |---|---|---|---|---|---|
-| whole plant | 17k | 6.9 ms | 8.5 ms | 8.7 ms | 0 |
-| mid zoom | 373k | 6.9 ms | 8.6 ms | 8.7 ms | 0 |
-| close-up | 330k | 6.9 ms | 8.6 ms | 8.8 ms | 0 |
-| very close | 326k | 6.9 ms | 8.5 ms | 8.7 ms | 0 |
+| whole plant | 273k | 6.9 ms | 7.7 ms | 7.8 ms | 0 |
+| mid zoom | 3.0M | 6.9 ms | 7.7 ms | 13.9 ms | 0 |
+| close-up | 2.2M | 6.9 ms | 7.7 ms | 7.8 ms | 0 |
+| very close | 2.3M | 6.9 ms | 7.7 ms | 7.8 ms | 0 |
 
 - **It holds the display's refresh rate everywhere:** 6.9 ms is one frame at 144 Hz. The PRD target is 30 fps (33 ms per frame), and no frame came close to it.
 - **What this does not show:** the frame interval does not show how much GPU headroom is left; it answers "does it stay smooth".
-- **The 3M budget was never reached:** the loader draws a tile only when it covers enough pixels, so at most about 370k points were drawn.
+- **Detail:** the loader refines a tile once it covers 50 pixels on screen ([ADR 0016](docs/adr/0016-point-detail-and-shape.md)). With the loader's default of 200 pixels (until 2026-10-11) at most about 370k points were drawn, and the whole plant showed only 17k; now mid zoom reaches the 3M budget.
 - **Load time:** first points appeared 1.6–4.8 s after opening the page locally (3 runs; the `?stats` overlay updates once a second, so each value may be up to 1 s late). The first screen downloads about 0.3 MB of tile data (metadata, hierarchy, root tile) plus the app: about 500 KB of gzipped JavaScript (budget 1 MB).
 
 ## Known limitations
