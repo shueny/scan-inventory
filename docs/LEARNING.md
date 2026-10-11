@@ -402,7 +402,7 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 
 ### Why this way
 
-[ADR 0016](adr/0016-point-detail-and-shape.md) (accepted): 50 px gives 10 to 16 times the points in far views, for 22–29 MB of tiles and 180–250 requests per view. That still fits the free plan for invited reviewers. 30 px would download 50+ MB per view. Circles cost nothing extra.
+[ADR 0016](adr/0016-point-detail-and-shape.md) (accepted): 50 px gives 10 to 16 times the points in far views. In the spike's two zoomed views that costs 22–29 MB of tiles and 180–250 requests per view; the opening whole-plant view is 26 tiles, about 4.4 MB. That still fits the free plan for invited reviewers. 30 px would download 50+ MB per zoomed view. Circles cost nothing extra.
 
 ### Quiz
 

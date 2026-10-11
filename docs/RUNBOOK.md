@@ -179,10 +179,21 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
   Access on both hostnames (one app, owner's email only), first deploy, GitHub secrets (deploy
   workflow green). Step 9: video link set in web/.env.demo. ESLint and Prettier now ignore
   web/.wrangler (local deploys left a temporary Worker bundle there that broke `make gate`).
+- 2026-10-10: owner accepted ADRs 0012 (review queue), 0013 (dashboard and export: families,
+  "SW - SE" as its own zone, rejected objects left out of the numbers) and 0014 (compose web
+  service).
 - 2026-10-11: T10 (added by the owner): the demo looked blurry because the loader's default
   minNodePixelSize (200 px) kept far views at the root tile. Spike with images; owner chose 50 px
   and circles (ADR 0016). Freed disk space first (removed the unused T2 tiles nora-5pct and
   nora-voxel5mm, `pnpm store prune`): the disk had 154 MB left.
-- 2026-10-10: owner accepted ADRs 0012 (review queue), 0013 (dashboard and export: families,
-  "SW - SE" as its own zone, rejected objects left out of the numbers) and 0014 (compose web
-  service).
+- 2026-10-11: T10 review rounds (Docker was read-only after the disk filled, so the api and web
+  contract tests could not run locally; CI runs them):
+  round 1 on a7534d2: 0 high, 4 medium (LOD rule worded wrongly; README load time stale; first
+  points not measured; spike pixel ratio wrong, it ran at 1x), 4 low. Fixed in fafeb67: exact
+  rule, throttled first-points runs (0.8 s at 20 Mbit/s, 2.2 s at 5 Mbit/s), e2e checks the
+  effect (more than the root tile; fails at 200 px).
+  round 2 on fafeb67: 0 high, 2 medium (README rule wording; first-points method), 4 low. Fixed in
+  6a4a799.
+  round 3 on 6a4a799 (last): 0 high, 1 medium (the "before" request count was an old estimate,
+  not the measured 11-29 tiles), 3 low. Fixed after it; checked by the gate and CI, not by a
+  fourth review.

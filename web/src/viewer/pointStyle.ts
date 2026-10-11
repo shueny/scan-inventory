@@ -6,8 +6,8 @@ import { PointShape, PointSizeType } from "@pnext/three-loader";
  * `minNodePixelSize`: the loader fetches a child tile only if the child's bounding sphere,
  * projected on the screen, has a radius of at least this many device pixels. Its default,
  * 200, kept the whole-plant view at the root tile (13k points of a 3M budget); 50 draws
- * 10 to 16 times the points in far views, at 144 Hz on the MacBook Air M3, for about
- * 22–29 MB of tiles per view on the 13 % demo data.
+ * 10 to 16 times the points in far views, at 144 Hz on the MacBook Air M3. On the 13 % demo
+ * data the opening view is 26 tiles (about 4.4 MB); zoomed views are 22–29 MB.
  * Circles instead of squares give smoother edges at no measurable cost.
  */
 export const POINT_STYLE = {
