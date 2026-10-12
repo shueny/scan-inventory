@@ -200,3 +200,5 @@ Merge: fast-forward `main` to the task branch, then start the next task from `ma
 - 2026-10-11: T10 merged (PR #13) and PR #12 (compose web image) merged. Owner saw white specks
   up close on the live demo (Retina): gaps between round points. Compared sizes at 2x; owner chose
   point size 1.5 (ADR 0016 amendment), branch t10-point-size.
+- 2026-10-12: DEPLOY step 10.3 done: README has the live address and the video link (both need an
+  invitation). Steps 10.1 and 10.2 (Chrome and Firefox, first points) and the T9 status wait for the owner.

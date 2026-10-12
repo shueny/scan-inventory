@@ -13,9 +13,11 @@ The full specification is [docs/PRD.md](docs/PRD.md). Every decision is in [docs
 
 ## Live demo
 
-The demo runs on Cloudflare Pages with a 13 % sample of the scan (about 20M points), and access is by invitation (Cloudflare Access). In the demo, your review changes are saved only in your own browser. *The address goes here once the owner has finished [docs/DEPLOY.md](docs/DEPLOY.md).*
+**[scan-inventory.pages.dev](https://scan-inventory.pages.dev)** (by invitation)
 
-A video of the demo path (83 s) is recorded with `pnpm --dir web demo:record` and served with the demo data.
+The demo runs on Cloudflare Pages with a 13 % sample of the scan (about 20M points). Access is by invitation through Cloudflare Access: enter an invited email address, then the one-time code Cloudflare sends to it. In the demo, your review changes are saved only in your own browser; "Reset demo" restores the original state. It works best in Chrome or Firefox on a desktop screen.
+
+**[Demo video](https://scan-inventory.pages.dev/r2/v1/media/demo.webm)** (83 s, the demo path; needs the same invitation). It is recorded with `pnpm --dir web demo:record` and served with the demo data.
 
 ![The scan coloured by class, with filters, the inventory and the 3D view](docs/img/01-overview.jpg)
 
