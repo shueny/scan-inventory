@@ -80,6 +80,25 @@ flowchart LR
 | `web/` | React app | React 18, TypeScript, Vite, Three.js 0.160, `@pnext/three-loader`, Zustand, TanStack Query, Recharts, Tailwind |
 | `docs/` | spec, ADRs, learning log, runbook | |
 
+## Design story: from data findings to architecture
+
+Before designing anything, I measured the dataset ([PRD section 5](docs/PRD.md), [T2 spike report](docs/spikes/T2-report.md)). Each architecture decision answers one of those findings. Read each row left to right: what the data showed, what that rules out, what was chosen.
+
+| finding (measured) | constraint | decision | record |
+|---|---|---|---|
+| One 3.25 GB file, 151.9M points | No browser can load it, and Python must not load it whole | Chunked offline pipeline (272 MB peak RAM on the full file) → Potree tiles with level of detail | [0004](docs/adr/0004-potreeconverter-native-macos-build.md), [0005](docs/adr/0005-potree-loader-and-picking.md) |
+| Structure and floor are 74 % of all points | They swamp the equipment and the point budget | Shown in light grey with a toggle; class colours go to the equipment | [0007](docs/adr/0007-viewer-architecture.md) |
+| Only 263 objects | The metadata is tiny | Filtering, the dashboard summary and CSV export run in the browser, the same code in both modes | [0010](docs/adr/0010-data-sources-contract-and-panels.md), [0013](docs/adr/0013-dashboard-and-export.md) |
+| The P&ID and the annotations disagree | Results need a human check | Six rule functions → 45 issues → a review queue with an append-only audit history | [0002](docs/adr/0002-class-mapping-for-mismatch-rule.md), [0012](docs/adr/0012-review-queue.md) |
+| 24 of 85 pipes are bent or branched | Their PCA length is not trustworthy (66 % of the length) | Labelled as an estimate, unreliable share shown, its own issue type | [0013](docs/adr/0013-dashboard-and-export.md) |
+| Every point has an instance id below 65,536 | Clicking a point must return an object | The id goes into the standard LAS `point_source_id` field; a GPU pick reads it | [0005](docs/adr/0005-potree-loader-and-picking.md) |
+| `octree.bin` is about 400 MB; Pages allows 25 MB per file | The static host cannot hold the tiles | Tiles in a private R2 bucket, read through a Function with HTTP Range | [0015](docs/adr/0015-demo-hosting-cloudflare.md) |
+| The public demo may have no backend | Review state has nowhere to live | One `ScanDataSource` interface, two implementations, one contract test suite | [0010](docs/adr/0010-data-sources-contract-and-panels.md) |
+
+In one sentence: big points go offline and into tiles, small metadata goes to the browser, and human decisions go into an append-only history.
+
+Every ADR lists the options that were not chosen and what the chosen one costs. [docs/LEARNING.md](docs/LEARNING.md) explains each task in plain language, with quiz questions.
+
 ## Run it (macOS, Apple Silicon)
 
 ### 1. Tools
