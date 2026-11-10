@@ -1,4 +1,4 @@
-# 0017 · Kubernetes manifests for local full mode
+# 0018 · Kubernetes manifests for local full mode
 
 Status: **proposed, waiting for the owner** · 2026-11-09 · Task T11 (PRD 1.2 draft, section 6.3)
 

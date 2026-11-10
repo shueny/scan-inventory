@@ -2,7 +2,7 @@
 
 Version 1.2 (draft) · 2026-11-09 · Owner: Shueny Wang
 Changes in 1.1: public online demo added (static hosting, review state in the browser), data source adapter, summary and export moved to the client, new task T9.
-Changes in 1.2 (draft, waiting for the owner): Kubernetes manifests for local full mode on a local cluster (section 6.3, task T11, ADR 0017). Helm, a cloud cluster and the public demo hosting stay as they are.
+Changes in 1.2 (draft, waiting for the owner): Kubernetes manifests for local full mode on a local cluster (section 6.3, task T11, ADR 0018). Helm, a cloud cluster and the public demo hosting stay as they are.
 
 This document is the single source of truth for building the scan-inventory MVP with Claude Code. Read it fully before writing code. When this document and your own judgement disagree, stop and ask the owner.
 
@@ -467,7 +467,7 @@ Ask the owner before creating any cloud account resource, and give her the exact
 Done when: the public URL runs the demo script from section 3 in Chrome and Firefox on desktop, a Range request to the tiles returns `206 Partial Content`, first points appear within about 5 seconds on a normal connection, and the README links to the live demo.
 
 **T11 · Kubernetes manifests (added in 1.2, draft)**
-Kustomize base plus a `kind` overlay under `infra/k8s/`, for the services in section 6.3, following the owner's decisions in ADR 0017. A kind cluster config that mounts `data/` and maps port 8088. A make target or script to create the cluster, load the images, create the Secret from `.env`, run the migrate-seed Job, deploy, and delete it all again. Render and validate the manifests in CI without a cluster.
+Kustomize base plus a `kind` overlay under `infra/k8s/`, for the services in section 6.3, following the choices recorded in ADR 0018. A kind cluster config that mounts `data/` and maps port 8088. A make target or script to create the cluster, load the images, create the Secret from `.env`, run the migrate-seed Job, deploy, and delete it all again. Render and validate the manifests in CI without a cluster.
 Done when: on a fresh kind cluster the demo script from section 3 (steps 2 to 9) works at http://localhost:8088; the migrate-seed Job completes before the api pods become ready; deleting one api pod does not interrupt the app; a review decision survives deleting every api pod and the postgres pod; and `docker compose up` still works unchanged.
 
 ---
@@ -503,7 +503,7 @@ Open questions for the owner (ask when the related task starts):
 3. Should `SW - SE` objects count in both zones in the dashboard, or stay separate? (T7)
 4. Random or voxel sampling for the demo tiles? (T2)
 5. Cloudflare Pages or GitHub Pages for the demo site, and which domain or subpath? (T9)
-6. The Kubernetes choices in ADR 0017: target cluster, packaging, migration, database, data, entry point. (T11)
+6. The Kubernetes choices in ADR 0018: target cluster, packaging, migration, database, data, entry point. (T11)
 
 ---
 

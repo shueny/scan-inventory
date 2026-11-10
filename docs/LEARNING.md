@@ -492,3 +492,24 @@ Four limits are easier to explain as mechanisms than as missing features.
 1. The whole-plant view selects about 300k points while `POINT_BUDGET` is 3 million. What stopped the loader, and what would a budget for a different GPU require?
 2. You select a valve whose fine tiles have not arrived yet. Why is its box still drawn, and what would have to change to colour that valve's points instead?
 3. You correct a pipe's class. Which stored record changes, which one does not, and why can two reviewers not both be represented on one event today?
+
+## Docs · A Kubernetes draft, not a cluster
+
+### What was built
+
+Nothing runs on Kubernetes. [PRD 1.2](PRD.md) is still a draft: section 6.3 and task T11 describe local full mode on a kind cluster. [ADR 0018](adr/0018-kubernetes-local-cluster.md) is proposed. ADR 0017 stays the architecture pictures. Helm, a cloud cluster, and the invitation demo stay as they are.
+
+### Key concepts
+
+- **Compose and the cluster share images, not the start command.** `docker compose up` still migrates inside the one API container. On Kubernetes that command would run in every API pod at once, so the draft puts migrate-and-seed in one Job and leaves the Deployment on uvicorn only.
+- **The tiles stay a host directory.** The draft mounts `data/` into the kind node. It does not copy the cloud into git or into an image.
+
+### Why this way
+
+The draft is on `main` so the choices are in the repo. T11 does not start until those choices are accepted.
+
+### Quiz
+
+1. Why does the draft refuse to keep `alembic upgrade head` in every API pod?
+2. Which ADR number is the Kubernetes proposal, and which one is the architecture pictures?
+3. What is still out of scope after this draft: Helm, a managed cluster, or the local kind manifests?
