@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="586" viewBox="0 0 1160 586" role="img">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 1.2 L 9 5 L 0 8.8 z" fill="#1e1e1e"/></marker></defs>
+<text x="24" y="36" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="20"><tspan x="24" dy="0">One pipeline, two runtimes</tspan></text>
+<text x="24" y="60" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="14"><tspan x="24" dy="0">The scan is processed once. Both runtimes only read the files it wrote.</tspan></text>
+<rect x="24" y="88" width="210" height="132" rx="8" fill="#ffec99" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="36" y="133" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">Source scan</text>
+<text x="36" y="133" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="36" dy="18">nora.ply, 3.25 GB</tspan><tspan x="36" dy="18">151.9M source points</tspan><tspan x="36" dy="18">classes and P&amp;ID</tspan></text>
+<rect x="288" y="88" width="250" height="132" rx="8" fill="#a5d8ff" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="300" y="133" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">Offline pipeline</text>
+<text x="300" y="133" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="300" dy="18">Python, chunked reads</tspan><tspan x="300" dy="18">instances, issues, scan</tspan><tspan x="300" dy="18">LAS, then PotreeConverter</tspan></text>
+<rect x="592" y="80" width="270" height="68" rx="8" fill="#d3f9d8" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="604" y="111" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">Inventory JSON</text>
+<text x="604" y="111" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="604" dy="18">instances, issues, scan</tspan></text>
+<rect x="592" y="164" width="270" height="68" rx="8" fill="#d3f9d8" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="604" y="195" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">Potree tiles</text>
+<text x="604" y="195" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="604" dy="18">metadata + octree.bin</tspan></text>
+<rect x="896" y="100" width="240" height="112" rx="8" fill="#fff4e6" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="908" y="135" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">Points stay files.</text>
+<text x="908" y="135" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="908" dy="18">Postgres stores the</tspan><tspan x="908" dy="18">inventory and the</tspan><tspan x="908" dy="18">review log only.</tspan></text>
+<line x1="234" y1="154" x2="288" y2="154" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="538" y1="154" x2="592" y2="114" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="538" y1="154" x2="592" y2="198" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="24" y="266" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="14"><tspan x="24" dy="0">Local full mode</tspan></text>
+<rect x="24" y="284" width="150" height="56" rx="8" fill="#e7f5ff" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="36" y="309" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">Browser</text>
+<text x="36" y="309" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="36" dy="18">one origin</tspan></text>
+<rect x="226" y="276" width="210" height="88" rx="8" fill="#a5d8ff" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="238" y="308" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">nginx :8088</text>
+<text x="238" y="308" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="238" dy="18">app, /api proxy</tspan><tspan x="238" dy="18">/potree with Range</tspan></text>
+<rect x="488" y="268" width="180" height="52" rx="8" fill="#a5d8ff" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="500" y="291" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">FastAPI</text>
+<text x="500" y="291" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="500" dy="18">one transaction</tspan></text>
+<rect x="720" y="252" width="230" height="84" rx="8" fill="#ffd8a8" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="732" y="282" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">PostgreSQL 16</text>
+<text x="732" y="282" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="732" dy="18">seeded inventory</tspan><tspan x="732" dy="18">append-only review_event</tspan></text>
+<line x1="174" y1="312" x2="226" y2="320" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="436" y1="320" x2="488" y2="294" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="668" y1="294" x2="720" y2="294" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="24" y="414" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="14"><tspan x="24" dy="0">Invitation demo</tspan></text>
+<rect x="24" y="436" width="150" height="72" rx="8" fill="#e7f5ff" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="36" y="469" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">Browser</text>
+<text x="36" y="469" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="36" dy="18">Access email</tspan></text>
+<rect x="226" y="428" width="210" height="88" rx="8" fill="#a5d8ff" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="238" y="460" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">Cloudflare Pages</text>
+<text x="238" y="460" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="238" dy="18">static app</tspan><tspan x="238" dy="18">/r2 Function</tspan></text>
+<rect x="488" y="428" width="200" height="88" rx="8" fill="#d3f9d8" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="500" y="460" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">Private R2</text>
+<text x="500" y="460" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="500" dy="18">tiles and JSON</tspan><tspan x="500" dy="18">under v1/</tspan></text>
+<rect x="740" y="436" width="250" height="72" rx="8" fill="#ffd8a8" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="752" y="460" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">Review events</text>
+<text x="752" y="460" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="752" dy="18">stay in this browser</tspan><tspan x="752" dy="18">same event shape</tspan></text>
+<line x1="174" y1="472" x2="226" y2="472" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="436" y1="472" x2="488" y2="472" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="688" y1="472" x2="740" y2="472" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="24" y="554" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="14"><tspan x="24" dy="0">CI deploys the app. The owner uploads the tiles and JSON. The demo has no API and no database.</tspan></text>
+</svg>

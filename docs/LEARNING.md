@@ -316,8 +316,8 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 ### Key concepts
 
 - **Reproducibility is tested, not assumed**: a README is only right if someone (or a script) follows it from a clean clone. The check runs each step and records its exit code and duration.
-- **Level of detail**: the loader draws an octree node only when it would cover enough pixels (T10 states the exact rule: the child's projected bounding-sphere radius in device pixels against `minNodePixelSize`). From far away the whole plant is mostly the root node (13k of the 17k points drawn); zooming in fetches finer nodes with Range requests. Speed comes from not loading what you cannot see.
-- **Frame rate is capped by the display**: browsers draw at most once per screen refresh (144 Hz here). A steady 144 fps means "faster than needed", not "exactly this fast". What the frame times can prove is "smooth or not": record every frame's time and report the median, the 99th percentile and the worst frame, not a per-second average, which hides single slow frames. With vsync off the numbers look faster, but they mostly measure how fast the browser schedules frames, not the GPU (review round 2 of T8).
+- **Level of detail**: the loader draws an octree node only when it would cover enough pixels (T10 states the exact rule: the child's projected bounding-sphere radius in device pixels against `minNodePixelSize`). At the loader's old 200 px default, the whole-plant view stayed on the root tile (13,105 points). Zooming in fetches finer nodes with Range requests. Speed comes from not loading what you cannot see.
+- **Frame rate is capped by the display**: browsers present at most once per screen refresh (144 Hz here). A steady interval at that period means the view kept up. It is not GPU time, and a frame that finishes early still waits, so the figure does not show spare capacity. Record every frame's time and report the median, the 99th percentile and the worst frame, not a per-second average, which hides single slow frames. With vsync off the numbers look faster, but they mostly measure how fast the browser schedules frames, not the GPU (review round 2 of T8).
 - **One origin**: when the app, the API and the tiles come from the same host and port, the browser applies no cross-origin rules, and the app code uses the same paths everywhere.
 
 ### Why this way
@@ -426,3 +426,69 @@ Browser check on the real data, static and api mode: 7 zones, 85 pipes, ≈ 110.
 1. Why did switching from square to round points create white specks on near surfaces?
 2. Why does making points bigger help up close but not change the whole-plant view?
 3. The close-up drew 2,996,334 points. Which setting capped that number, and what would happen if it were raised?
+
+---
+
+## Docs · Three different point counts
+
+### What was built
+
+Wording only. The header, the About panel and the README now name which count is which.
+
+- The header shows `scan.point_count` from the pipeline (151,901,442 for NORA) as source points.
+- The demo tiles are a separate count: a 13 % random sample, about 20M points. Local full mode serves the full scan.
+- `POINT_BUDGET` (3 million) is the upper bound on points the loader selects for a view. `minNodePixelSize` often stops the walk before that bound.
+
+### Key concepts
+
+- **Source points, tile points, selected points.** The source scan, the tiles on disk, and the points chosen for the current view are three counts. Hiding structure and floor does not remove those points from the budget: the loader still selected them, and the shader discards them.
+- **A frame interval is the time between presentations.** With vsync, `requestAnimationFrame` runs once per display refresh. 6.9 ms on that 144 Hz display means the view kept up. A frame that finishes early still waits, so the interval is not GPU time and does not show spare capacity.
+
+### Why this way
+
+The octree, the budget and the measurement were already recorded. The sentences a reader meets first now use the same words as the code: source points, point budget, frame interval.
+
+### Quiz
+
+1. The header shows 151.9M. Which of the three counts is that, and what does `POINT_BUDGET` limit?
+2. Which of octree streaming, the point budget and the GPU pick come from `@pnext/three-loader`, and which parts does this repository add?
+3. The performance table says 6.9 ms. What clock produced that number?
+
+---
+
+## Docs · The architecture pictures
+
+### What was built
+
+[docs/ARCHITECTURE.md](ARCHITECTURE.md) and three pictures in [docs/diagrams/](diagrams/): the two runtimes, what a view loads, and what a review writes. Each picture has a `.excalidraw` file and an `.svg`. `node docs/diagrams/build.mjs` writes both from one description.
+
+### Key concepts
+
+- **A runtime reads files.** The 3.25 GB scan is handled offline, in chunks. Postgres is seeded with the inventory and then stores review events. The point tiles are never rows.
+- **One origin locally, no server on the demo.** nginx is the only host the browser talks to, so there is no CORS. The demo cannot use that stack: Pages cannot hold `octree.bin`, and a public bucket would skip Access, so a Function reads a private bucket.
+- **One interface, two stores for the same event.** The panels call `ScanDataSource`. The API appends `review_event` in the same transaction as the change. The demo appends that shape in the browser and replays it.
+
+### Why this way
+
+The pictures match the code a reader will open: `VITE_DATA_MODE`, `POINT_BUDGET`, `minNodePixelSize`, and `ScanDataSource`. The options that were turned down stay in the ADRs. The README links the page so the first screen is the split, and the reasons sit next to the pictures. [ADR 0017](adr/0017-architecture-diagrams.md) records why one script writes both the Excalidraw file and the SVG.
+
+### Quiz
+
+1. Why does local full mode serve the app, the API and the tiles from one nginx, and what would three ports have required?
+2. Why is the demo's R2 bucket private, and which process is allowed to read it?
+3. A reviewer corrects a class. Which store changes in local mode, which store changes in the demo, and which file does not change in either?
+
+## Docs · The limits, as mechanisms
+
+Four limits are easier to explain as mechanisms than as missing features.
+
+- **The point budget is one measured constant.** `POINT_BUDGET` caps how many points the loader may select for a view. `minNodePixelSize` often stops the walk earlier, so a far view never reaches the cap. A second cap, for another GPU, would be a second constant plus a new measurement on that machine. The M3 run is the only recorded one.
+- **A selected object is a box, not a set of recoloured points.** The box comes from the object's `bbox_min` and `bbox_max` in the inventory, so it is on screen even when that object's tiles have not loaded. Colouring the object's own points means testing each loaded point's instance id in the shader. [ADR 0005](adr/0005-potree-loader-and-picking.md) records why that shader path was left unused: the loader's instance-colour attribute is named differently from the attribute in the tiles, and the MVP selects with a box.
+- **A class correction and a point's colour are different records.** The colour in 3D is the classification stored in the tiles when PotreeConverter ran. The correction is a review event, applied when the inventory is read. The table and the detail panel follow the event. The tiles stay as they were. Showing the new class on the points means a shader override for those instance ids, or building the tiles again.
+- **A review event has one actor.** In the API that actor is the string `"local user"`. In the demo the same events sit in the browser that made them. Closing an issue that is already closed returns 409, so the log rejects a repeated close. Two people editing one object needs an identity on the event and a rule for two open edits. The event has the first, only as that fixed string. It does not have the second.
+
+#### Quiz
+
+1. The whole-plant view selects about 300k points while `POINT_BUDGET` is 3 million. What stopped the loader, and what would a budget for a different GPU require?
+2. You select a valve whose fine tiles have not arrived yet. Why is its box still drawn, and what would have to change to colour that valve's points instead?
+3. You correct a pipe's class. Which stored record changes, which one does not, and why can two reviewers not both be represented on one event today?

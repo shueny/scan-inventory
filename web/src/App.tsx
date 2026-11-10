@@ -33,7 +33,7 @@ export function App() {
           {scan.data && (
             <p className="text-sm text-muted">
               {scan.data.name} · {scan.data.instance_count} objects ·{" "}
-              {(scan.data.point_count / 1e6).toFixed(1)}M points
+              {(scan.data.point_count / 1e6).toFixed(1)}M source points
             </p>
           )}
           <button

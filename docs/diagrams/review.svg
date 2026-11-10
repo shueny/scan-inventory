@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="969" height="526" viewBox="0 0 969 526" role="img">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 1.2 L 9 5 L 0 8.8 z" fill="#1e1e1e"/></marker></defs>
+<text x="24" y="36" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="20"><tspan x="24" dy="0">What a review writes</tspan></text>
+<text x="24" y="60" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="14"><tspan x="24" dy="0">The panels talk to one interface. The build picks which side runs.</tspan></text>
+<rect x="24" y="168" width="160" height="72" rx="8" fill="#e7f5ff" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="36" y="201" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">React panels</text>
+<text x="36" y="201" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="36" dy="18">no direct fetch</tspan></text>
+<rect x="236" y="156" width="200" height="96" rx="8" fill="#d0bfff" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="248" y="192" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">ScanDataSource</text>
+<text x="248" y="192" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="248" dy="18">same methods</tspan><tspan x="248" dy="18">404, 422 and 409</tspan></text>
+<rect x="496" y="92" width="250" height="96" rx="8" fill="#a5d8ff" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="508" y="119" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">ApiDataSource</text>
+<text x="508" y="119" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="508" dy="18">FastAPI, one transaction</tspan><tspan x="508" dy="18">append review_event</tspan><tspan x="508" dy="18">second close is 409</tspan></text>
+<rect x="496" y="220" width="270" height="96" rx="8" fill="#ffd8a8" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="508" y="247" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">StaticDataSource</text>
+<text x="508" y="247" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="508" dy="18">append the same event</tspan><tspan x="508" dy="18">in this browser</tspan><tspan x="508" dy="18">replay it onto the JSON</tspan></text>
+<line x1="184" y1="204" x2="236" y2="204" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="436" y1="204" x2="496" y2="140" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="436" y1="204" x2="496" y2="268" stroke="#1e1e1e" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="24" y="366" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="14"><tspan x="24" dy="0">Checked the same way on both sides</tspan></text>
+<rect x="24" y="384" width="250" height="72" rx="8" fill="#d3f9d8" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="36" y="408" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">OpenAPI schema</text>
+<text x="36" y="408" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="36" dy="18">generated TypeScript</tspan><tspan x="36" dy="18">a test if they drift</tspan></text>
+<rect x="306" y="384" width="250" height="72" rx="8" fill="#d3f9d8" stroke="#1e1e1e" stroke-width="1.5"/>
+<text x="318" y="408" fill="#1e1e1e" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600">One contract suite</text>
+<text x="318" y="408" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="15"><tspan x="318" dy="18">both adapters</tspan><tspan x="318" dy="18">the same fixture data</tspan></text>
+<text x="24" y="494" fill="#495057" font-family="Helvetica, Arial, sans-serif" font-size="14"><tspan x="24" dy="0">A class correction updates the inventory record. The point colour lives in the tiles and is not rewritten.</tspan></text>
+</svg>

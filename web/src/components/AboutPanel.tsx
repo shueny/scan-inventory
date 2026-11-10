@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
-import { IS_DEMO, REPO_URL } from "../config";
+import { IS_DEMO, POINT_BUDGET, REPO_URL } from "../config";
+
+const BUDGET_NOTE = `The loader's point budget is ${POINT_BUDGET / 1_000_000} million points for a view.`;
 
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -93,8 +95,8 @@ export function AboutPanel({ onClose }: { onClose: () => void }) {
         <ArchitectureDiagram />
         <p className="mt-2 text-muted">
           {IS_DEMO
-            ? "This demo reads static files and keeps your review changes in this browser; it shows a 13 % random sample of the scan (about 20M points)."
-            : "Local full mode: review changes are stored by the FastAPI service in PostgreSQL; the scan is shown in full (151.9M points)."}{" "}
+            ? `This demo reads static files and keeps your review changes in this browser. The tiles are a 13 % random sample (about 20M points). ${BUDGET_NOTE}`
+            : `Local full mode: review changes are stored by the FastAPI service in PostgreSQL. The tiles are the full scan. ${BUDGET_NOTE}`}{" "}
           Both modes use the same interface and pass the same contract tests.
         </p>
 

@@ -7,10 +7,10 @@
 //
 // For each view (whole plant, then three zoom levels) it waits for tiles to stream, orbits
 // the camera for 6 s and records the time between frames with requestAnimationFrame. With
-// vsync on (the default) the browser draws at most once per display refresh, so a steady
-// interval equal to the refresh period means "keeps up"; the slowest frames show stutter.
-// The interval includes the page's CPU work but not GPU work that is still queued, so it
-// cannot tell how much headroom the GPU has; it answers "does it stay smooth".
+// vsync on (the default) the browser presents at most one frame per refresh, so a steady
+// interval equal to the refresh period means the view kept up. The interval is not GPU
+// time: a frame that finishes early still waits for the next refresh, so it does not show
+// spare capacity. The slowest frames show stutter.
 import { chromium } from "@playwright/test";
 
 // pnpm 10 passes a "--" separator through to the script; skip it.

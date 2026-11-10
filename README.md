@@ -4,16 +4,16 @@ A web platform that turns an annotated laser scan of an industrial plant into a 
 
 **Honest framing.** The objects come from the dataset's *human annotations*, which stand in for "AI detections". The review queue comes from rule-based checks against the P&ID. No model was trained here.
 
-It is a portfolio project. It shows three things:
-1. **Large point clouds in the browser**: 151.9 million points, streamed as Potree tiles with level of detail.
+It shows three things:
+1. **Large point clouds in the browser**: the source scan has 151.9 million points, streamed as Potree octree tiles. The loader selects at most 3 million points for a view.
 2. **A product workflow around detections**: present, verify, correct, report.
 3. **A clear architecture**: an offline pipeline, a typed API, persistence, containerised services, and one UI that runs against two interchangeable data sources.
 
-The full specification is [docs/PRD.md](docs/PRD.md). Every decision is in [docs/adr/](docs/adr/), and every task is explained in [docs/LEARNING.md](docs/LEARNING.md).
+The full specification is [docs/PRD.md](docs/PRD.md). Design records are in [docs/adr/](docs/adr/), and every task is explained in [docs/LEARNING.md](docs/LEARNING.md).
 
 ## Live demo
 
-The demo runs on Cloudflare Pages with a 13 % sample of the scan (about 20M points), and access is by invitation (Cloudflare Access). In the demo, your review changes are saved only in your own browser. *The address goes here once the owner has finished [docs/DEPLOY.md](docs/DEPLOY.md).*
+The demo is deployed at <https://scan-inventory.pages.dev>. It runs on Cloudflare Pages with a 13 % sample of the scan (about 20M points in the tiles). Cloudflare Access asks for an invited email before the page opens; the link is not public. In the demo, review changes are saved only in that browser. The owner's setup steps are in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 A video of the demo path (83 s) is recorded with `pnpm --dir web demo:record` and served with the demo data.
 
@@ -37,41 +37,29 @@ A video of the demo path (83 s) is recorded with `pnpm --dir web demo:record` an
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  subgraph offline["Offline pipeline (Python, scripts/)"]
-    ply["pointcloud/nora.ply<br/>3.25 GB, 151.9M points"]
-    meta["meta/classes.json<br/>meta/pnid_composition.csv"]
-    inst["build_instances.py<br/>instances.json"]
-    iss["build_issues.py<br/>issues.json"]
-    sm["build_scan_meta.py<br/>scan.json"]
-    las["export_las.py<br/>LAS 1.4"]
-    pc["PotreeConverter 2.1.2<br/>data/potree/nora"]
-    ply --> inst
-    meta --> inst
-    inst --> iss
-    meta --> iss
-    inst --> sm
-    meta --> sm
-    ply --> las --> pc
-  end
-  subgraph runtime["Local full mode (docker compose)"]
-    web["web: nginx<br/>React app, /api proxy, /potree tiles"]
-    api["api: FastAPI"]
-    db[("db: PostgreSQL 16")]
-    web -->|/api| api --> db
-  end
-  inst & iss & sm -->|seed| api
-  pc -->|Range requests| web
-```
+![One pipeline feeds local full mode and the invitation demo](docs/diagrams/system.svg)
+
+The scan is processed once. Local full mode serves those files from nginx, with FastAPI and Postgres behind the same origin. The invitation demo serves the same kind of files from a private R2 bucket and keeps reviews in the browser. The view path, the review path, and the reason each split was chosen are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 - **Heavy work offline, light work at runtime.** The 3.25 GB file is processed once. At runtime only pre-built tiles and small JSON files are served.
 - **One interface, two data sources** ([ADR 0010](docs/adr/0010-data-sources-contract-and-panels.md)):
   - `ApiDataSource`: FastAPI and Postgres (local full mode).
-  - `StaticDataSource`: the JSON files, with review changes kept in the browser (public demo).
+  - `StaticDataSource`: the JSON files, with review changes kept in the browser (invitation demo).
 
   The same contract test suite runs against both.
 - **One contract.** The API's OpenAPI schema generates the frontend's TypeScript types, and a test fails if they drift apart.
+- **Loader and application.** `@pnext/three-loader` streams the octree, applies the point budget and `minNodePixelSize`, and reads the instance id with a GPU pick. This repository sets those parameters, the classification colour and the round points, moves the camera to a selection, and uses a bounding-box test when the pick misses. Inventory, review and the two data sources are application code.
+
+### Technical decisions
+
+| Decision | Why | Trade-off |
+|---|---|---|
+| Potree octree | Stream the scan instead of loading every point up front | Tiles are built offline with PotreeConverter |
+| `@pnext/three-loader` | Classification colour works on these Potree 2.0 tiles | three.js stays on 0.160 ([ADR 0005](docs/adr/0005-potree-loader-and-picking.md)) |
+| `minNodePixelSize` 50 | At the loader default of 200 px, a far view stayed on the root tile | More tiles per view ([ADR 0016](docs/adr/0016-point-detail-and-shape.md)) |
+| Point budget 3M | Upper bound on points the loader selects for a view (`POINT_BUDGET` in `web/src/config.ts`) | Once the cap is reached, finer tiles are not added |
+| PostgreSQL | Inventory and an append-only review history | Local full mode runs a database. The demo stores reviews in the browser ([ADR 0009](docs/adr/0009-api-data-model-and-tests.md)) |
+| Two data sources | The same UI for the demo and local full mode | One extra interface, covered by one contract test suite ([ADR 0010](docs/adr/0010-data-sources-contract-and-panels.md)) |
 
 | folder | what | tooling |
 |---|---|---|
@@ -182,16 +170,15 @@ CI runs the same steps on every pull request. The process is in [docs/RUNBOOK.md
 
 Measured on 2026-10-11 (round points, size 1.5) on a MacBook Air M3 (24 GB) with an external 144 Hz display. The browser was Chromium in a visible window (WebGL on Metal), with the dev server serving the full tiles (151.9M points) and a 3M point budget. The script is [`web/perf/measure-orbit.mjs`](web/perf/measure-orbit.mjs) (`pnpm --dir web perf`). For each view it orbits the camera for 6 s and records the time between frames.
 
-| view | points drawn (most) | median frame | 99th percentile | worst frame | frames over 33 ms |
+| view | points in view (most) | median interval | 99th percentile interval | worst interval | frames over 33 ms |
 |---|---|---|---|---|---|
 | whole plant | 300k | 6.9 ms | 7.7 ms | 7.8 ms | 0 |
 | mid zoom | 3.0M | 6.9 ms | 7.8 ms | 7.9 ms | 0 |
 | close-up | 2.0M | 6.9 ms | 7.7 ms | 7.8 ms | 0 |
 | very close | 2.5M | 6.9 ms | 7.8 ms | 7.9 ms | 0 |
 
-- **It holds the display's refresh rate everywhere:** 6.9 ms is one frame at 144 Hz. The PRD target is 30 fps (33 ms per frame), and no frame came close to it.
-- **What this does not show:** the frame interval does not show how much GPU headroom is left; it answers "does it stay smooth".
-- **Detail:** the loader fetches a child tile only if its bounding sphere, projected on screen, has a radius of at least 50 device pixels ([ADR 0016](docs/adr/0016-point-detail-and-shape.md)). With the loader's default of 200 pixels (until 2026-10-11) at most about 370k points were drawn, and the whole plant showed only 17k; now mid zoom reaches the 3M budget.
+- **Frame interval:** 6.9 ms is one refresh of that 144 Hz display. The script records `requestAnimationFrame` with vsync on, so the browser presents at most once per refresh. A steady interval at that period means those views kept up with the display. It is not GPU time. A frame that finishes early still waits for the next refresh, so the figure does not show spare capacity. The PRD target is 30 fps (33 ms per frame). No recorded frame reached it.
+- **Detail:** the loader fetches a child tile only if its bounding sphere, projected on screen, has a radius of at least 50 device pixels ([ADR 0016](docs/adr/0016-point-detail-and-shape.md)). With the loader's default of 200 pixels (until 2026-10-11) the whole-plant view drew only the root tile, 13,105 points, and a closer view held at most about 373k; mid zoom now reaches the 3M budget.
 - **Load time (demo: 13 % tiles, production build):** first points appear once the app (about 500 KB of gzipped JavaScript, budget 1 MB) and the first 0.3 MB of tile data (metadata, hierarchy, root tile) have arrived. With the production build on the 13 % demo tiles that took 0.2–0.3 s locally, 0.8 s at 20 Mbit/s and 2.2 s at 5 Mbit/s (2026-10-11, [spike](docs/spikes/T10-point-detail.md)). The rest of the first view then streams in: 26 tiles, about 4.4 MB.
 
 ## Known limitations
