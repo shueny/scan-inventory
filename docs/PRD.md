@@ -1,7 +1,8 @@
 # scan-inventory · MVP Product Requirements Document
 
-Version 1.1 · 2026-10-08 · Owner: Shueny Wang
+Version 1.2 (draft) · 2026-11-09 · Owner: Shueny Wang
 Changes in 1.1: public online demo added (static hosting, review state in the browser), data source adapter, summary and export moved to the client, new task T9.
+Changes in 1.2 (draft, waiting for the owner): Kubernetes manifests for local full mode on a local cluster (section 6.3, task T11, ADR 0017). Helm, a cloud cluster and the public demo hosting stay as they are.
 
 This document is the single source of truth for building the scan-inventory MVP with Claude Code. Read it fully before writing code. When this document and your own judgement disagree, stop and ask the owner.
 
@@ -89,13 +90,14 @@ The same script must also work on the **public demo URL** in a desktop browser, 
 - Dashboard with counts and estimated pipe length.
 - CSV export.
 - Docker Compose for API, database and static data.
+- Kubernetes manifests (Kustomize) for local full mode on a local kind cluster (section 6.3, T11).
 - Public demo build: static frontend, sampled Potree tiles in object storage, browser-only review state.
 - Tests and a README with architecture diagram, live demo link and dataset credit.
 
 ### Out of scope (later)
 - User accounts, auth, multi-user collaboration.
 - Uploading new scans, background job queue, chunked upload.
-- Kubernetes, Helm, offline (air-gapped) installer.
+- Helm, a managed cloud cluster, autoscaling, offline (air-gapped) installer. (Plain Kubernetes manifests for a local cluster are in scope since 1.2, section 6.3.)
 - Own detection algorithm (RANSAC cylinder fitting), accuracy metrics.
 - P&ID PDF viewer, RAG question answering.
 - Point-level editing (re-assigning points between objects).
@@ -242,6 +244,30 @@ Because the instance list is small (263 rows), **filtering, the dashboard summar
 - Recommended hosts: Cloudflare Pages + R2 (one account, R2 free tier has no egress fees). Alternative: GitHub Pages for the site, still R2 for tiles. The owner decides in T9.
 
 ---
+
+### 6.3 Kubernetes (local full mode on a local cluster)
+
+Goal: show that the local full mode (section 6) runs on Kubernetes, and what has to change to get there. It is a teaching and interview piece, not a production deployment. The public demo stays on Cloudflare (ADR 0015) and nothing is hosted publicly.
+
+```
+ browser ── localhost:8088 ──> Service web (nginx: app, /api proxy, /potree tiles)
+                                  │ /api
+                                  ▼
+                               Service api ──> Deployment api (uvicorn only, 2 replicas)
+                                  │
+                                  ▼
+                               Service db  ──> StatefulSet postgres + PersistentVolumeClaim
+ Job migrate-seed (alembic upgrade head + app.seed), run once per deploy, before the api rolls
+ data/ (tiles + JSON) mounted read-only from the host into the kind node
+```
+
+Requirements:
+- Same images as docker compose. Compose behaviour does not change.
+- Schema migration and seeding run once per deploy in a Job, never in every API pod (several pods would race; ADR 0009 named this risk).
+- Readiness and liveness probes on `GET /api/health`. Resource requests and limits on every container, set from measured use.
+- Database credentials in a Secret created from `.env`, never committed. Non-secret settings in a ConfigMap.
+- Data stays out of git and out of images (rule 6): tiles and JSON are mounted from the host's `data/`.
+- One command to bring it up and one to tear it down, documented in the README.
 
 ## 7. Tech stack
 
@@ -440,6 +466,10 @@ Build the sampled tiles (`export_las.py --sample`, PotreeConverter), demo mode U
 Ask the owner before creating any cloud account resource, and give her the exact steps for anything that needs her login. Never put credentials in the repo.
 Done when: the public URL runs the demo script from section 3 in Chrome and Firefox on desktop, a Range request to the tiles returns `206 Partial Content`, first points appear within about 5 seconds on a normal connection, and the README links to the live demo.
 
+**T11 · Kubernetes manifests (added in 1.2, draft)**
+Kustomize base plus a `kind` overlay under `infra/k8s/`, for the services in section 6.3, following the owner's decisions in ADR 0017. A kind cluster config that mounts `data/` and maps port 8088. A make target or script to create the cluster, load the images, create the Secret from `.env`, run the migrate-seed Job, deploy, and delete it all again. Render and validate the manifests in CI without a cluster.
+Done when: on a fresh kind cluster the demo script from section 3 (steps 2 to 9) works at http://localhost:8088; the migrate-seed Job completes before the api pods become ready; deleting one api pod does not interrupt the app; a review decision survives deleting every api pod and the postgres pod; and `docker compose up` still works unchanged.
+
 ---
 
 ## 10. Non-functional requirements
@@ -473,6 +503,7 @@ Open questions for the owner (ask when the related task starts):
 3. Should `SW - SE` objects count in both zones in the dashboard, or stay separate? (T7)
 4. Random or voxel sampling for the demo tiles? (T2)
 5. Cloudflare Pages or GitHub Pages for the demo site, and which domain or subpath? (T9)
+6. The Kubernetes choices in ADR 0017: target cluster, packaging, migration, database, data, entry point. (T11)
 
 ---
 
