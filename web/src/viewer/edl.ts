@@ -4,12 +4,13 @@ import * as THREE from "three";
  * Eye-Dome Lighting (ADR 0019): shade the points from the depth buffer alone, so edges and
  * corners get dark outlines and the cloud reads as surfaces.
  *
- * Starting values are Potree's defaults. `radius` is in CSS pixels; it is multiplied by the
+ * Softer than Potree's defaults (1.0, 1.4), which drew a thick dark rim around every point on
+ * the 13 % demo tiles (ADR 0019 amendment). `radius` is in CSS pixels; it is multiplied by the
  * pixel ratio, so the outline looks the same on a 1× and a 2× screen.
  */
 export const EDL_SETTINGS = {
-  strength: 1.0,
-  radius: 1.4,
+  strength: 0.6,
+  radius: 1.0,
   neighbours: 8,
 } as const;
 

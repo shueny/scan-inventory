@@ -169,7 +169,7 @@ test("the loaded cloud streams detail from 50 px tiles and draws round points (A
       () => (window as unknown as { __scanViewer: { pointStyle: Style } }).__scanViewer.pointStyle,
     );
   // PointShape.CIRCLE is 1 in @pnext/three-loader.
-  expect(await style()).toMatchObject({ minNodePixelSize: 50, shape: 1, size: 1.5 });
+  expect(await style()).toMatchObject({ minNodePixelSize: 50, shape: 1, size: 1.25 });
   // The effect, not only the setting: the default view refines past the root tile. With the
   // loader's default of 200 px it draws the root alone.
   await expect

@@ -17,8 +17,8 @@ describe("neighbourOffsets", () => {
 });
 
 describe("EdlPass", () => {
-  it("starts from Potree's defaults", () => {
-    expect(EDL_SETTINGS).toEqual({ strength: 1.0, radius: 1.4, neighbours: 8 });
+  it("is softer than Potree's defaults (strength 1.0, radius 1.4)", () => {
+    expect(EDL_SETTINGS).toEqual({ strength: 0.6, radius: 1.0, neighbours: 8 });
   });
 
   it("sizes its colour and depth target in device pixels and keeps the outline width in CSS pixels", () => {
@@ -27,7 +27,7 @@ describe("EdlPass", () => {
     expect(pass.target.width).toBe(2880);
     expect(pass.target.height).toBe(1800);
     // The depth texture follows the target's size when three.js uploads it.
-    expect(pass.uniforms.radius.value).toBeCloseTo(2.8);
+    expect(pass.uniforms.radius.value).toBeCloseTo(2.0);
     expect(pass.uniforms.texel.value).toMatchObject({ x: 1 / 2880, y: 1 / 1800 });
     pass.dispose();
   });

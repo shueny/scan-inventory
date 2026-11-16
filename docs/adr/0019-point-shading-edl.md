@@ -1,6 +1,6 @@
 # 0019 · Point shading with Eye-Dome Lighting (EDL)
 
-Status: accepted (the owner chose "approach 1" and then option A with the three proposed smaller choices, 2026-11-16) · 2026-11-16 · Task T12 (added by the owner)
+Status: accepted (the owner chose "approach 1" and then option A with the three proposed smaller choices, 2026-11-16; softer strength and radius the same day, see Amendment) · 2026-11-16 · Task T12 (added by the owner)
 
 ## Context
 
@@ -115,3 +115,15 @@ How it is built:
   - On the real scan, the points are dense enough that EDL should outline objects instead.
   - **Owner to do:** judge strength and radius by eye on the demo tiles and the full tiles. Record before/after screenshots in a spike note if the values change.
 - **Option 4 (Scan-to-CAD) stays open** as a separate proposal for the owner. It is not part of this task.
+
+## Amendment: softer EDL, strength 0.6 and radius 1.0 (owner, 2026-11-16)
+
+On the 13 % demo tiles, Potree's defaults drew a thick dark rim around every point up close, so the cloud looked grainy. Settings compared on the same views, on the M3 with vsync off ([spike note](../spikes/T12-edl-tuning.md)):
+
+- strength 1.0, radius 1.4 px (the defaults): heavy outlines;
+- **strength 0.6, radius 1.0 px, with point size 1.25 (chosen)**: thinner outlines, same frame time (close-up median 4.2 ms against 4.7 ms);
+- EDL off: the floor fills with white gaps. On sparse tiles EDL also hides the gaps, so it stays on by default.
+
+`EDL_SETTINGS` in `web/src/viewer/edl.ts` holds the new values; the unit test checks them. The point size change is an amendment to [ADR 0016](0016-point-detail-and-shape.md).
+
+Frame cost on a GPU is now measured at a still camera: with EDL the close-up drew 3.0M points at a 4.2 ms median, well under 6.9 ms (144 Hz). The orbit run with `pnpm --dir web perf` on the full tiles is still open, because the full tiles are not on this machine.

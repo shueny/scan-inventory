@@ -549,3 +549,22 @@ The draft is on `main` so the choices are in the repo. T11 does not start until 
 1. EDL needs no normals. What does it use instead, and what makes a pixel darker?
 2. Why are the selection box and the filter outlines drawn in a second scene after the EDL pass, and how does the box stay hidden behind points in front of it?
 3. With the first version, the background turned from #f6f7f9 to a darker grey. Why, and why did the points' own colours not change?
+
+### Follow-up: softer EDL and point size 1.25
+
+- **What changed:** two constants. `EDL_SETTINGS` strength 1.0 → 0.6 and radius 1.4 → 1.0 px; `POINT_STYLE.size` 1.5 → 1.25. Recorded as amendments to [ADR 0019](adr/0019-point-shading-edl.md) and [ADR 0016](adr/0016-point-detail-and-shape.md), with screenshots and frame times in the [spike note](spikes/T12-edl-tuning.md).
+- **Why:**
+  - Up close on the 13 % demo tiles, every point had a thick dark rim, so the cloud looked grainy instead of like surfaces.
+  - The softer values thin the outlines at the same frame time.
+- **What the spike also found:**
+  - **EDL hides gaps.** With EDL off, the floor fills with white specks. A gap pixel next to a point is "behind an edge", so EDL darkens it.
+  - **Smaller is not always finer.** At size 1.0 the gaps return as dark specks. 1.25 is the smallest size that still covers them.
+  - **Paraboloid points cost 40–80 % more** for almost no visible change. Writing depth per pixel turns off the GPU's early depth test.
+  - **Voxel sampling looks sharper but patterned.** The 5 mm cubes leave a regular grid on floors and pipe walls, so the demo keeps the random sample.
+- **How it was measured:** vsync off in a visible Chromium window, so the frame interval is render cost (4.2 ms median at 3.0M points), not the 6.9 ms display refresh.
+
+#### Quiz
+
+1. With EDL off, the 13 % floor shows white specks; with EDL on, it does not. What does EDL do to a gap pixel, and why?
+2. Why did point size 1.0 look worse than 1.25, even though smaller points should look finer?
+3. The README measured 6.9 ms per frame, this spike 4.2 ms on the same M3. Why are both true, and which one shows spare GPU time?
