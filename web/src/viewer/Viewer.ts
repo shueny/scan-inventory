@@ -12,6 +12,7 @@ import { easeInOutCubic, lerpView, viewForBox, type CameraView } from "../domain
 import { classColorTable, visibleClassFilter } from "../domain/classColors";
 import { pickByBoxes, type PickBox } from "../domain/pickBoxes";
 import type { ColorMode } from "../state/viewStore";
+import { EdlPass } from "./edl";
 import { applyPointStyle } from "./pointStyle";
 
 export interface ViewerOptions {
@@ -42,7 +43,12 @@ const FILTER_COLOR = 0x000000;
  */
 export class Viewer {
   private readonly renderer: THREE.WebGLRenderer;
+  /** The points. Drawn through the EDL pass when shading is on (ADR 0019). */
   private readonly scene = new THREE.Scene();
+  /** Lines drawn after the points, so EDL does not outline them. */
+  private readonly overlays = new THREE.Scene();
+  private readonly edl = new EdlPass();
+  private edlEnabled = true;
   private readonly camera: THREE.PerspectiveCamera;
   private readonly controls: OrbitControls;
   private readonly potree = new Potree("v2");
@@ -87,9 +93,9 @@ export class Viewer {
     this.controls.addEventListener("start", () => (this.flight = null)); // user takes over
 
     this.selectionBox.visible = false;
-    this.scene.add(this.selectionBox);
+    this.overlays.add(this.selectionBox);
     this.filterBoxes.visible = false;
-    this.scene.add(this.filterBoxes);
+    this.overlays.add(this.filterBoxes);
     this.potree.pointBudget = options.pointBudget;
 
     const canvas = this.renderer.domElement;
@@ -132,6 +138,16 @@ export class Viewer {
   setBackgroundVisible(visible: boolean): void {
     this.backgroundVisible = visible;
     this.applyClasses();
+  }
+
+  /** Eye-Dome Lighting on or off (ADR 0019); on by default. */
+  setEdlEnabled(enabled: boolean): void {
+    this.edlEnabled = enabled;
+  }
+
+  /** Whether the points are drawn with EDL (browser tests, `?e2e`). */
+  get shading(): { edl: boolean } {
+    return { edl: this.edlEnabled };
   }
 
   /** Boxes for the fallback pick when no point is under the cursor. */
@@ -230,6 +246,7 @@ export class Viewer {
     this.cloud?.dispose();
     this.filterBoxes.geometry.dispose();
     this.filterBoxes.material.dispose();
+    this.edl.dispose();
     this.renderer.dispose();
     canvas.remove();
   }
@@ -312,6 +329,7 @@ export class Viewer {
     const { clientWidth: w, clientHeight: h } = this.container;
     if (w === 0 || h === 0) return;
     this.renderer.setSize(w, h);
+    this.edl.setSize(w, h, this.renderer.getPixelRatio());
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
@@ -336,7 +354,13 @@ export class Viewer {
       // count.)
       this.stats.visiblePoints = visibleNodes.reduce((sum, node) => sum + node.numPoints, 0);
     }
-    this.renderer.render(this.scene, this.camera);
+    if (this.edlEnabled) this.edl.render(this.renderer, this.scene, this.camera);
+    else this.renderer.render(this.scene, this.camera);
+    // Both paths leave the points' depth on the screen, so the selection box is still
+    // hidden where points are in front of it.
+    this.renderer.autoClear = false;
+    this.renderer.render(this.overlays, this.camera);
+    this.renderer.autoClear = true;
     this.reportStats(now);
   };
 

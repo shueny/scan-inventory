@@ -36,6 +36,8 @@ export function FilterPanel({
   const setColorMode = useViewStore((s) => s.setColorMode);
   const backgroundVisible = useViewStore((s) => s.backgroundVisible);
   const setBackgroundVisible = useViewStore((s) => s.setBackgroundVisible);
+  const edlEnabled = useViewStore((s) => s.edlEnabled);
+  const setEdlEnabled = useViewStore((s) => s.setEdlEnabled);
   const filters = useViewStore((s) => s.filters);
   const setFilters = useViewStore((s) => s.setFilters);
   const resetFilters = useViewStore((s) => s.resetFilters);
@@ -75,6 +77,15 @@ export function FilterPanel({
             className="size-4 accent-ink"
           />
           Show structure and floor
+        </label>
+        <label className="mt-1 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={edlEnabled}
+            onChange={(e) => setEdlEnabled(e.target.checked)}
+            className="size-4 accent-ink"
+          />
+          Shade edges (EDL)
         </label>
       </fieldset>
 

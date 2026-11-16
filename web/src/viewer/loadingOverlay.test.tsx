@@ -26,6 +26,7 @@ vi.mock("./Viewer", () => ({
     setFilterBoxes() {}
     setColorMode() {}
     setBackgroundVisible() {}
+    setEdlEnabled() {}
     select() {}
     frameAll() {}
   },

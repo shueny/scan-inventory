@@ -1,6 +1,6 @@
 # 0019 · Point shading with Eye-Dome Lighting (EDL)
 
-Status: proposed (the owner chose "approach 1", making the point cloud read as solid surfaces, on 2026-11-16; the implementation options below are open) · 2026-11-16 · Task T12 (added by the owner)
+Status: accepted (the owner chose "approach 1" and then option A with the three proposed smaller choices, 2026-11-16) · 2026-11-16 · Task T12 (added by the owner)
 
 ## Context
 
@@ -78,15 +78,40 @@ The same EDL shader, run through `three/examples/jsm/postprocessing`.
 
 ## Decision
 
-Pending the owner's choice between A, B and C, and her answers to the three smaller choices.
+Option A, with the three smaller choices as proposed:
 
-## Consequences (if A is chosen)
+- **EDL is on by default.** A "Shade edges (EDL)" checkbox under "Show structure and floor" turns it off. The state is `edlEnabled` in the shared view store.
+- **Potree's defaults:** strength 1.0, radius 1.4, 8 neighbours. The radius is in CSS pixels and is multiplied by the pixel ratio, so the outline has the same width on a 1× and a 2× screen.
+- **ADR 0016's point settings are unchanged.**
 
-- **Frame cost:** one extra full-screen pass, plus a colour and depth target at canvas size. The frame cost must be measured on the MacBook Air at the default budget, on the full tiles, against the PRD 8.3 target (30 fps or better). The result goes into the README performance table and `docs/LEARNING.md`.
+How it is built:
+
+- `web/src/viewer/edl.ts` holds `EDL_SETTINGS`, `neighbourOffsets` and `EdlPass`.
+- The viewer now has two scenes:
+  - `scene` holds the points and is drawn through the pass.
+  - `overlays` holds the selection box and the filter outlines. It is drawn afterwards, straight to the screen, so EDL does not outline the lines.
+- The pass copies the points' depth to the screen (`gl_FragDepth`). Because of that, the selection box is still hidden behind points in front of it, with EDL on or off.
+- The depth texture is float. With 24-bit integer depth, the log differences are too coarse far from the camera (near plane 0.05 m, far plane 500 m).
+- **Colour, a bug found on the first screenshot:**
+  - The off-screen target stores the scene background in linear colour. Copied to the screen unchanged, the background turned darker (#ececf2 instead of #f6f7f9).
+  - The points' shader writes screen colours directly, so their colours copy correctly.
+  - The fix: empty pixels take the background colour, in sRGB, from a uniform. A unit test checks the value.
+
+## Consequences
+
+- **Frame cost:** one extra full-screen pass, which reads the depth 9 times per pixel, plus a colour and depth target at canvas size.
+  - **Not measured on a GPU yet.** The only numbers so far come from the cloud session's software renderer (SwiftShader, no GPU, 2× pixel ratio): about 8–10 fps with EDL and 43 fps without, on the fixture plant. That renderer runs the shader on the CPU, so the numbers say nothing about the MacBook Air.
+  - **Owner to do:** run `pnpm --dir web perf` on the MacBook Air with the full tiles, against the PRD 8.3 target (30 fps or better), and add the result to the README performance table. The 2026-10-11 run in that table is the "EDL off" baseline.
 - **Memory:** two textures at canvas size, about 2 × 2880 × 1800 × 4 bytes ≈ 41 MB at a 2× pixel ratio on a 1440 × 900 window.
 - **Picking:** unchanged, because `Potree.pick` renders separately. The existing Playwright pick test must still pass.
 - **Tests:**
-  - A unit test for the pass setup (target size follows the canvas, toggle state).
-  - The existing Playwright tests, plus a check through the `?e2e` hook that EDL is on by default.
+  - Unit tests (`edl.test.ts`) cover the neighbour offsets, Potree's default values, the target size in device pixels with the radius in CSS pixels, and the background colour in sRGB.
+  - A component test checks that the checkbox switches `edlEnabled` in the store.
+  - A Playwright test checks, through the `?e2e` hook (`Viewer.shading`), that EDL is on by default and that the checkbox turns it off while the view keeps drawing.
+  - The existing Playwright tests pass unchanged, GPU pick included.
   - The shader itself is judged by screenshots, not by a unit test.
+- **Look not yet judged on real data:**
+  - The fixture plant is a set of sparse random blobs, so EDL outlines almost every single point there.
+  - On the real scan, the points are dense enough that EDL should outline objects instead.
+  - **Owner to do:** judge strength and radius by eye on the demo tiles and the full tiles. Record before/after screenshots in a spike note if the values change.
 - **Option 4 (Scan-to-CAD) stays open** as a separate proposal for the owner. It is not part of this task.

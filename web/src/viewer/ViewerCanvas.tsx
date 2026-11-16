@@ -24,6 +24,7 @@ export function ViewerCanvas() {
   const selectedId = useViewStore((s) => s.selectedId);
   const colorMode = useViewStore((s) => s.colorMode);
   const backgroundVisible = useViewStore((s) => s.backgroundVisible);
+  const edlEnabled = useViewStore((s) => s.edlEnabled);
   const select = useViewStore((s) => s.select);
   const filters = useViewStore((s) => s.filters);
   const filtered = useMemo(
@@ -84,6 +85,10 @@ export function ViewerCanvas() {
   useEffect(() => {
     viewer.current?.setBackgroundVisible(backgroundVisible);
   }, [backgroundVisible]);
+
+  useEffect(() => {
+    viewer.current?.setEdlEnabled(edlEnabled);
+  }, [edlEnabled]);
 
   useEffect(() => {
     if (loadState !== "ready") return;

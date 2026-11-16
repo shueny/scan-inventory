@@ -16,6 +16,8 @@ export interface ViewState {
   selectedId: number | null;
   colorMode: ColorMode;
   backgroundVisible: boolean;
+  /** Eye-Dome Lighting on the points (ADR 0019). */
+  edlEnabled: boolean;
   filters: InstanceFilters;
   sort: Sort;
   bottomTab: BottomTab;
@@ -24,6 +26,7 @@ export interface ViewState {
   select: (id: number | null) => void;
   setColorMode: (mode: ColorMode) => void;
   setBackgroundVisible: (visible: boolean) => void;
+  setEdlEnabled: (enabled: boolean) => void;
   setFilters: (patch: Partial<InstanceFilters>) => void;
   resetFilters: () => void;
   /** Sort by a column; the same column again flips the direction. */
@@ -38,6 +41,7 @@ export const useViewStore = create<ViewState>()((set) => ({
   selectedId: null,
   colorMode: "class",
   backgroundVisible: true, // shown in muted grey by default (ADR 0007)
+  edlEnabled: true, // on by default, toggle to compare (ADR 0019)
   filters: NO_FILTERS,
   sort: { key: "tag", dir: "asc" },
   bottomTab: "inventory",
@@ -46,6 +50,7 @@ export const useViewStore = create<ViewState>()((set) => ({
   select: (id) => set({ selectedId: id }),
   setColorMode: (colorMode) => set({ colorMode }),
   setBackgroundVisible: (backgroundVisible) => set({ backgroundVisible }),
+  setEdlEnabled: (edlEnabled) => set({ edlEnabled }),
   setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
   resetFilters: () => set({ filters: NO_FILTERS }),
   sortBy: (key) =>

@@ -177,6 +177,23 @@ test("the loaded cloud streams detail from 50 px tiles and draws round points (A
     .toBeGreaterThan(1);
 });
 
+test("the points are shaded with EDL by default, and the toggle turns it off (ADR 0019)", async ({
+  page,
+}) => {
+  await open(page, "/?stats&e2e");
+  const edl = () =>
+    page.evaluate(
+      () =>
+        (window as unknown as { __scanViewer: { shading: { edl: boolean } } }).__scanViewer.shading
+          .edl,
+    );
+  expect(await edl()).toBe(true);
+  await page.getByRole("checkbox", { name: "Shade edges (EDL)" }).uncheck();
+  await expect.poll(edl).toBe(false);
+  // Still drawing after the switch.
+  await expect(page.getByText(/fps · [1-9][\d,]* points/)).toBeVisible();
+});
+
 test("demo step 4: clicking an object in 3D selects exactly that object, by GPU pick", async ({
   page,
 }) => {

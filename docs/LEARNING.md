@@ -513,3 +513,39 @@ The draft is on `main` so the choices are in the repo. T11 does not start until 
 1. Why does the draft refuse to keep `alembic upgrade head` in every API pod?
 2. Which ADR number is the Kubernetes proposal, and which one is the architecture pictures?
 3. What is still out of scope after this draft: Helm, a managed cluster, or the local kind manifests?
+
+## T12 · Edge shading with Eye-Dome Lighting
+
+### What was built
+
+- **Edge shading:** the viewer now shades the points with Eye-Dome Lighting (EDL). Edges and corners get dark outlines, so pipes and equipment read as surfaces instead of flat dots ([ADR 0019](adr/0019-point-shading-edl.md)).
+- **A toggle:** a "Shade edges (EDL)" checkbox turns the shading off, so the before and after can be shown in the demo.
+- **Code:** the pass lives in `web/src/viewer/edl.ts`.
+
+### Key concepts
+
+- **Why the cloud looked flat.** Every point had one flat colour and no light. A pipe in front of a wall had the same colour at its edge as the wall, so the eye could not see where one surface ends.
+- **What EDL does.** It uses only the depth buffer, the distance from the camera to each pixel:
+  1. For each pixel, look at 8 neighbours on a small circle around it.
+  2. If a neighbour is closer to the camera, the pixel sits behind an edge, so darken it.
+  3. Compare depths on a log scale, so near and far objects get the same outline.
+  4. An empty pixel next to a point gets a strong darkening. That draws the silhouette.
+- **Why no normals are needed.** Ordinary lighting needs to know which way a surface faces. Points do not store that. EDL only needs depth, which every renderer already has.
+- **Render to a texture, then post-process.** The points are drawn into an off-screen target (a colour texture plus a depth texture). Then one full-screen rectangle runs the EDL shader, which reads both textures and writes the shaded picture to the screen.
+- **Two scenes.** The selection box and the filter outlines are drawn after the EDL pass, so they are not outlined themselves. The pass copies the points' depth to the screen, so the box is still hidden behind points in front of it.
+- **Colour spaces.** Three.js stores colours in *linear* values for lighting maths, and the screen expects *sRGB*. The off-screen target kept the background linear, which looked darker on screen. The fix gives empty pixels the background colour in sRGB.
+
+### Why this way
+
+- **An own pass (option A)** instead of the Three.js `EffectComposer` (B) or an SSAO library (C):
+  - It adds no dependency.
+  - It is about 140 lines in one file that can be read top to bottom.
+  - EDL is the standard method for point clouds. SSAO is made for closed meshes and gives noisy shadows on points with gaps.
+- **On by default with a toggle, and Potree's default strength and radius,** as the owner chose.
+- **Still open:** the frame cost on the MacBook Air. The cloud session only has a software renderer (no GPU), which runs the shader on the CPU, so its numbers say nothing about real hardware. The owner runs `pnpm --dir web perf` with the full tiles.
+
+### Quiz
+
+1. EDL needs no normals. What does it use instead, and what makes a pixel darker?
+2. Why are the selection box and the filter outlines drawn in a second scene after the EDL pass, and how does the box stay hidden behind points in front of it?
+3. With the first version, the background turned from #f6f7f9 to a darker grey. Why, and why did the points' own colours not change?
