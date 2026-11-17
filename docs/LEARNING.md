@@ -514,6 +514,8 @@ The draft is on `main` so the choices are in the repo. T11 does not start until 
 2. Which ADR number is the Kubernetes proposal, and which one is the architecture pictures?
 3. What is still out of scope after this draft: Helm, a managed cluster, or the local kind manifests?
 
+Update (PRD 1.3): the owner rejected this draft. See "Docs · PRD 1.3" below.
+
 ## T12 · Edge shading with Eye-Dome Lighting
 
 ### What was built
@@ -568,3 +570,31 @@ The draft is on `main` so the choices are in the repo. T11 does not start until 
 1. With EDL off, the 13 % floor shows white specks; with EDL on, it does not. What does EDL do to a gap pixel, and why?
 2. Why did point size 1.0 look worse than 1.25, even though smaller points should look finer?
 3. The README measured 6.9 ms per frame, this spike 4.2 ms on the same M3. Why are both true, and which one shows spare GPU time?
+
+## Docs · PRD 1.3: the demo as built, Kubernetes withdrawn, a matching spike next
+
+### What was built
+
+Documents only. [PRD 1.3](PRD.md) is a draft waiting for the owner.
+
+- **The PRD now describes the demo that exists.** It said "public URL, anyone with the link, public R2 bucket". T9 built an invitation demo instead: Cloudflare Access in front, a private bucket, a Pages Function for the tiles ([ADR 0015](adr/0015-demo-hosting-cloudflare.md)). The PRD calls itself the single source of truth, so it has to match.
+- **Kubernetes is withdrawn.** [ADR 0018](adr/0018-kubernetes-local-cluster.md) is marked rejected, with the reason at the top; the analysis stays.
+- **New task T13: a spike on matching two detection runs**, with a decision gate, before any schema change.
+
+### Key concepts
+
+- **Documentation drift.** When an ADR changes a decision, the PRD text has to change too. Otherwise a reader finds two answers and trusts neither.
+- **A rejected ADR is still a record.** It shows a decision taken on purpose, with reasons, instead of an option that was forgotten.
+- **Detection runs.** A real model is retrained, so one scan gets several results over time. Each run gives the same pipe a new id, may split it in two, merge it with a neighbour, or shift its box. Review decisions have to survive that. Today the API seeds a scan once and cannot import a second run.
+- **Spike before schema.** Matching objects across runs is the most uncertain part. If it fails, the data model changes. So the spike measures matching first, with no database change, and the owner decides after reading the report. T2 used the same pattern for the loader.
+- **Avoiding a test that cannot fail.** If we write both the changes and the matcher, the matcher passes by design. Part of run 2 therefore comes from a real process: geometry recomputed from the sampled LAS files. The report still says the numbers are not a real model's accuracy.
+
+### Why this way
+
+An outside review argued that the project spends its effort on infrastructure, not on the product question. Checking it against the repo, some points were wrong (the instance ids are stable; the Function quota is already in ADR 0015 and 0016), and three held: the PRD had drifted, there was no path for a second detection run, and Kubernetes had no load to justify it. This change fixes the first, plans the second, and drops the third.
+
+### Quiz
+
+1. ADR 0015 changed the demo to invitation-only, but the PRD still said "public". Why is that a problem in a project where the PRD is the single source of truth?
+2. Why does T13 match objects by geometry first and use the P&ID tag only as supporting evidence?
+3. Why does T13 recompute geometry from the sampled LAS files, instead of only shifting boxes with a script, and what can its numbers still not prove?
