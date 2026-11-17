@@ -101,4 +101,6 @@ Splits and merges that really happened were found every time, apart from one mer
 2. **Add a class rule:** the parts of a split must have the old object's class, and a merge must keep one of its parts' classes. That would cut many false groups here. But our own scripted changes make up the test, so the gain would partly be by design.
 3. **Match by shared points instead of boxes.** Both runs label the same scan, so for each pair of objects we can count the points that carry both labels. A bent pipe then has no empty space, and a flange next to it shares no points. This needs per-point labels from both runs, so it cannot be tested with box-only scripted changes, and the import would need the point labels as well.
 
-The spike stops here. Three decisions are open: the thresholds, the data model (an ADR), and whether to continue.
+## Decision (owner, 2026-11-17)
+
+Option 1: continue with IoU 0.5 and containment 0.8. False splits and merges go to the review queue. The data model is decided in the schema task, with its own ADR.

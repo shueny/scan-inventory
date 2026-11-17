@@ -1,6 +1,6 @@
 # 0020 · Matching objects across two detection runs
 
-Status: method accepted (owner, 2026-11-17); thresholds and whether to continue are open, see the decision gate in [T13](../PRD.md) · Task T13
+Status: accepted (owner, 2026-11-17): method, thresholds IoU 0.5 and containment 0.8, and continue to the schema task · Task T13
 
 ## Context
 
@@ -32,7 +32,7 @@ Overlap measure:
 
 The P&ID tag is not used: a real model's output has no tag, so the spike measures the hard case. Structural and Floor are left out, because their boxes hold most of the plant.
 
-Proposed thresholds (owner to decide): `iou_min = 0.5`, `contain_min = 0.8`. On the 13 % sample the smallest IoU between an object's run 1 box and its sampled box is 0.625, so 0.5 leaves a margin. At 0.7 and above, unchanged objects start to fail.
+Thresholds (owner, 2026-11-17): `iou_min = 0.5`, `contain_min = 0.8`. On the 13 % sample the smallest IoU between an object's run 1 box and its sampled box is 0.625, so 0.5 leaves a margin. At 0.7 and above, unchanged objects start to fail.
 
 ## Consequences
 
