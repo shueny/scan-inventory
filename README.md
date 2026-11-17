@@ -138,7 +138,7 @@ Then pick one of the two tile sets:
   uv run --project scripts python scripts/export_las.py --out data/las/nora.las
   scripts/build_potree.sh data/las/nora.las data/potree/nora
   ```
-- **A 13 % sample:** 20M points, a 680 MB LAS file and 400 MB of tiles. Enough for development and the public demo ([ADR 0006](docs/adr/0006-demo-sampling.md)).
+- **A 13 % sample:** 20M points, a 680 MB LAS file and 400 MB of tiles. Enough for development and the invitation demo ([ADR 0006](docs/adr/0006-demo-sampling.md)).
   ```bash
   uv run --project scripts python scripts/export_las.py --out data/las/nora-random13.las --sample 0.13
   scripts/build_potree.sh data/las/nora-random13.las data/potree/nora

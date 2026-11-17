@@ -1,6 +1,15 @@
 # 0018 · Kubernetes manifests for local full mode
 
-Status: **proposed, waiting for the owner** · 2026-11-09 · Task T11 (PRD 1.2 draft, section 6.3)
+Status: **rejected** (owner, 2026-11-17) · proposed 2026-11-09 · Task T11 (PRD 1.2 draft, withdrawn in PRD 1.3)
+
+## Why it was rejected
+
+- **No problem to solve.** Local full mode serves 263 objects to one user. One API container and one database already do that, and Docker Compose starts them with one command (ADR 0009, ADR 0014). A cluster adds replicas, a migration Job and probes that this load never uses.
+- **The interview question.** "Why does this need Kubernetes?" has no answer from this project's own numbers. A design that cannot justify itself from its own data is weaker than no design.
+- **Where the time goes instead.** The open risk is in the product: review decisions do not survive a second detection run (PRD 1.3, task T13). That is where the next effort goes.
+- **What is kept.** The analysis below stays as written. It records how local full mode would map to Kubernetes, and the migrate-in-every-pod race it would have to fix first. Nothing under `infra/k8s/` was built.
+
+The proposal as written on 2026-11-09 follows.
 
 ## Context
 

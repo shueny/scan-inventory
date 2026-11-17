@@ -1,8 +1,9 @@
 # scan-inventory · MVP Product Requirements Document
 
-Version 1.2 (draft) · 2026-11-09 · Owner: Shueny Wang
-Changes in 1.1: public online demo added (static hosting, review state in the browser), data source adapter, summary and export moved to the client, new task T9.
-Changes in 1.2 (draft, waiting for the owner): Kubernetes manifests for local full mode on a local cluster (section 6.3, task T11, ADR 0018). Helm, a cloud cluster and the public demo hosting stay as they are.
+Version 1.3 (draft) · 2026-11-17 · Owner: Shueny Wang
+Changes in 1.1: online demo added (static hosting, review state in the browser), data source adapter, summary and export moved to the client, new task T9.
+Changes in 1.2 (withdrawn in 1.3): Kubernetes manifests for local full mode on a local cluster (task T11, ADR 0018).
+Changes in 1.3 (draft, waiting for the owner): the demo is described as built in T9, invitation-only behind Cloudflare Access with tiles in a private R2 bucket (sections 1, 3, 4, 6.2; ADR 0015). Kubernetes withdrawn (section 6.3, T11, ADR 0018). New task T13: a spike on matching two detection runs, so review decisions can survive a new model version (section 9).
 
 This document is the single source of truth for building the scan-inventory MVP with Claude Code. Read it fully before writing code. When this document and your own judgement disagree, stop and ask the owner.
 
@@ -34,12 +35,12 @@ The owner will be interviewed about every decision in this project. Code she can
 
 **Two ways to run it, one codebase.**
 
-| | Local full mode | Public demo mode |
+| | Local full mode | Invitation demo mode |
 |---|---|---|
-| who uses it | the owner, live in an interview | anyone with the link, before an interview |
+| who uses it | the owner, live in an interview | invited reviewers (Cloudflare Access), before an interview |
 | point cloud | full 151.9M points | sampled to about 20M points |
 | review state | FastAPI + PostgreSQL | stored only in the visitor's browser |
-| hosting | `docker compose up` on a laptop | static site + object storage, no server |
+| hosting | `docker compose up` on a laptop | static site + private object storage read through a Pages Function, no server |
 
 The UI is identical in both modes. Only the data source behind it changes (section 6.1). This is a deliberate architecture point to show in interviews.
 
@@ -75,7 +76,7 @@ The MVP is done when this script works end to end on the owner's MacBook:
 8. The dashboard shows counts per zone and class, and estimated pipe length per zone with a clear "estimate" label.
 9. The user exports the inventory as CSV, including review status.
 
-The same script must also work on the **public demo URL** in a desktop browser, with these differences: the scan is the sampled version, a banner says "Demo mode: your review changes are saved only in this browser", and a "Reset demo" button clears them. A visitor with no setup should see the first points within about 5 seconds on a normal connection.
+The same script must also work on the **demo URL** in a desktop browser, for an invited visitor after the Cloudflare Access sign-in, with these differences: the scan is the sampled version, a banner says "Demo mode: your review changes are saved only in this browser", and a "Reset demo" button clears them. The visitor needs no other setup and should see the first points within about 5 seconds on a normal connection.
 
 ---
 
@@ -90,18 +91,17 @@ The same script must also work on the **public demo URL** in a desktop browser, 
 - Dashboard with counts and estimated pipe length.
 - CSV export.
 - Docker Compose for API, database and static data.
-- Kubernetes manifests (Kustomize) for local full mode on a local kind cluster (section 6.3, T11).
-- Public demo build: static frontend, sampled Potree tiles in object storage, browser-only review state.
+- Invitation demo build: static frontend, sampled Potree tiles in a private bucket read through a Pages Function, Cloudflare Access in front, browser-only review state.
 - Tests and a README with architecture diagram, live demo link and dataset credit.
 
 ### Out of scope (later)
 - User accounts, auth, multi-user collaboration.
 - Uploading new scans, background job queue, chunked upload.
-- Helm, a managed cloud cluster, autoscaling, offline (air-gapped) installer. (Plain Kubernetes manifests for a local cluster are in scope since 1.2, section 6.3.)
+- Kubernetes manifests, Helm, a managed cloud cluster, autoscaling, offline (air-gapped) installer. (A local-cluster draft was added in 1.2 and withdrawn in 1.3, section 6.3.)
 - Own detection algorithm (RANSAC cylinder fitting), accuracy metrics.
 - P&ID PDF viewer, RAG question answering.
 - Point-level editing (re-assigning points between objects).
-- Hosting the API and database publicly. The public demo has no backend.
+- Hosting the API and database publicly. The invitation demo has no backend.
 - Mobile support. On small screens show a short notice and the demo video link.
 
 Keep these in mind when designing (for example, do not hard-code a single scan id into every table), but do not build them.
@@ -219,55 +219,38 @@ interface ScanDataSource {
 Two implementations:
 
 - **`ApiDataSource`** (local full mode): calls the FastAPI endpoints in 8.2.
-- **`StaticDataSource`** (public demo mode): loads `instances.json` and `issues.json` as static files, keeps an append-only list of review events in the browser, and replays them on top of the static data to get the current state. Same event shape as the API's `review_event` table.
+- **`StaticDataSource`** (invitation demo mode): loads `instances.json` and `issues.json` as static files, keeps an append-only list of review events in the browser, and replays them on top of the static data to get the current state. Same event shape as the API's `review_event` table.
 
 Mode is chosen at build time with `VITE_DATA_MODE=api|static`. Both implementations must pass the same contract test suite (one shared set of Vitest tests run against both, the API one against a running test server or a mock of it, propose which).
 
 Because the instance list is small (263 rows), **filtering, the dashboard summary and CSV export are computed in the frontend** from the instance list in both modes. One implementation, in `web/src/domain/`, with unit tests. The API therefore does not need summary or export endpoints.
 
-### 6.2 Public demo deployment
+### 6.2 Invitation demo deployment
+
+As built in T9 ([ADR 0015](adr/0015-demo-hosting-cloudflare.md)). The demo is not public: Cloudflare Access asks for an invited email before the site or its data opens.
 
 ```
- visitor's browser
-   │  HTML/JS/CSS + instances.json + issues.json        Range requests for tiles
-   ▼                                                     ▼
- Static site host (Cloudflare Pages)          Object storage (Cloudflare R2, public read)
-   web/dist (VITE_DATA_MODE=static)             potree/nora-demo/metadata.json
-                                                 potree/nora-demo/hierarchy.bin
-                                                 potree/nora-demo/octree.bin
+ invited visitor's browser
+   │  Cloudflare Access (invited email)
+   ▼
+ Cloudflare Pages, one origin
+   ├── static app: web/dist (VITE_DATA_MODE=static)
+   └── /r2/<key> ── Pages Function ── private R2 bucket
+                                        v1/data/{instances,issues,scan}.json
+                                        v1/potree/nora/{metadata.json,hierarchy.bin,octree.bin}
 ```
 
-- Potree 2.0 output is three files, and `octree.bin` is one large file. Static site hosts have per-file size limits (Cloudflare Pages: 25 MB), so tiles go to R2, not into the site.
-- R2 bucket: public read-only, CORS allows `GET` and `HEAD` from the demo origin, allows the `Range` request header and exposes `Content-Range`, `Content-Length`, `Accept-Ranges`. Verify with a curl Range request.
-- Long cache headers on tiles (they are immutable; put a version in the path, e.g. `nora-demo/v1/`).
-- No secrets in the frontend. Deployment credentials live only in the CI or the owner's machine.
-- Recommended hosts: Cloudflare Pages + R2 (one account, R2 free tier has no egress fees). Alternative: GitHub Pages for the site, still R2 for tiles. The owner decides in T9.
+- Potree 2.0 output is three files, and `octree.bin` is one large file (about 395 MB). Cloudflare Pages allows 25 MB per file, so tiles go to R2, not into the site.
+- The R2 bucket is private. An `r2.dev` address cannot be protected by Access, so the Function reads the bucket through a binding and answers Range requests itself (206, 416, 304). The app and the data share one origin, so no CORS is needed.
+- Every tile range is one Function request. The free plan allows 100,000 a day, about 100 visits a day at the current detail (ADR 0015, ADR 0016). Enough for invited reviewers; a public launch would need a custom domain with an edge cache.
+- The data version is in the path (`v1/`). A new upload goes to `v2/`, and review state in visitors' browsers starts clean (section 8.7).
+- No secrets in the frontend. Deployment credentials live only in CI or on the owner's machine. The owner uploads the data; CI never handles it.
 
 ---
 
-### 6.3 Kubernetes (local full mode on a local cluster)
+### 6.3 Kubernetes (withdrawn in 1.3)
 
-Goal: show that the local full mode (section 6) runs on Kubernetes, and what has to change to get there. It is a teaching and interview piece, not a production deployment. The public demo stays on Cloudflare (ADR 0015) and nothing is hosted publicly.
-
-```
- browser ── localhost:8088 ──> Service web (nginx: app, /api proxy, /potree tiles)
-                                  │ /api
-                                  ▼
-                               Service api ──> Deployment api (uvicorn only, 2 replicas)
-                                  │
-                                  ▼
-                               Service db  ──> StatefulSet postgres + PersistentVolumeClaim
- Job migrate-seed (alembic upgrade head + app.seed), run once per deploy, before the api rolls
- data/ (tiles + JSON) mounted read-only from the host into the kind node
-```
-
-Requirements:
-- Same images as docker compose. Compose behaviour does not change.
-- Schema migration and seeding run once per deploy in a Job, never in every API pod (several pods would race; ADR 0009 named this risk).
-- Readiness and liveness probes on `GET /api/health`. Resource requests and limits on every container, set from measured use.
-- Database credentials in a Secret created from `.env`, never committed. Non-secret settings in a ConfigMap.
-- Data stays out of git and out of images (rule 6): tiles and JSON are mounted from the host's `data/`.
-- One command to bring it up and one to tear it down, documented in the README.
+Version 1.2 proposed Kubernetes manifests for local full mode on a kind cluster (task T11). The owner withdrew it in 1.3: with 263 objects and no backend load, a cluster solves no problem the project has, and the time goes to T13 instead. The analysis stays in [ADR 0018](adr/0018-kubernetes-local-cluster.md), now marked rejected.
 
 ## 7. Tech stack
 
@@ -338,7 +321,7 @@ The mapping table lives in `scripts/class_mapping.py` and is reviewed by the own
 - point format 7 (xyz + rgb, 16-bit colour, scale uint8 x 257).
 - `classification` = class id (uint8, all ids are < 256).
 - **instance id goes into `point_source_id`** (uint16, standard field, no extra bytes needed). Verify in T2 that PotreeConverter keeps it.
-- `--sample` option for the public demo build, target about 20M points (fraction about 0.13). Default: all points. Sampling must be deterministic (fixed seed). In T2, compare plain random sampling with voxel-grid sampling on screenshots and file size, and let the owner choose. Check that small objects (the smallest has 1,100 points) are still visible and pickable after sampling.
+- `--sample` option for the demo build, target about 20M points (fraction about 0.13). Default: all points. Sampling must be deterministic (fixed seed). In T2, compare plain random sampling with voxel-grid sampling on screenshots and file size, and let the owner choose. Check that small objects (the smallest has 1,100 points) are still visible and pickable after sampling.
 - Scale 0.0001 m, offset at the bounding-box minimum.
 
 **P4 convert script.** `scripts/build_potree.sh` runs PotreeConverter on the LAS and writes to `data/potree/nora/`. Document in README how to install PotreeConverter on macOS (Apple Silicon). If building it is a problem, stop and report with options.
@@ -402,7 +385,7 @@ Requirements:
 - Export button builds the CSV in the browser from the current instance list (both modes).
 - Summary numbers: counts per zone x class, pipe length per zone (sum of `length_est_m` plus the share flagged unreliable), review progress. Computed in `web/src/domain/summary.ts`.
 
-### 8.7 Public demo mode
+### 8.7 Demo mode (invitation)
 
 - Banner at the top: "Demo mode: your review changes are saved only in this browser." with a "Reset demo" button (asks for confirmation).
 - Review events are stored in browser storage under a versioned key (e.g. `scan-inventory:nora:v1:events`). Every read and write is wrapped in try/catch. If storage is not available (private window, blocked), the app still works and keeps changes in memory for the session, and the banner says so.
@@ -461,14 +444,30 @@ Done when: demo steps 8 and 9 work in both modes.
 README (what it is, the honest framing from section 1, architecture diagram, how to run the pipeline and the app, dataset credit, known limitations), one Playwright smoke test of the demo path, recorded performance numbers.
 Done when: a fresh clone plus the README steps reproduces the full demo.
 
-**T9 · Public demo deployment**
+**T9 · Demo deployment (invitation-only, ADR 0015)**
 Build the sampled tiles (`export_las.py --sample`, PotreeConverter), demo mode UI from 8.7, upload tiles to R2 under a versioned path, configure CORS and cache headers, deploy the static build, and a GitHub Actions workflow that builds and deploys the site on push to `main` (tiles are uploaded manually by a documented script, not by CI). Record a 90-second demo video and add it plus screenshots to the README.
 Ask the owner before creating any cloud account resource, and give her the exact steps for anything that needs her login. Never put credentials in the repo.
-Done when: the public URL runs the demo script from section 3 in Chrome and Firefox on desktop, a Range request to the tiles returns `206 Partial Content`, first points appear within about 5 seconds on a normal connection, and the README links to the live demo.
+Done when: the demo URL runs the demo script from section 3 in Chrome and Firefox on desktop for an invited visitor, a Range request to the tiles returns `206 Partial Content` (through Access, as amended by ADR 0015), first points appear within about 5 seconds on a normal connection, and the README links to the live demo.
 
-**T11 · Kubernetes manifests (added in 1.2, draft)**
-Kustomize base plus a `kind` overlay under `infra/k8s/`, for the services in section 6.3, following the choices recorded in ADR 0018. A kind cluster config that mounts `data/` and maps port 8088. A make target or script to create the cluster, load the images, create the Secret from `.env`, run the migrate-seed Job, deploy, and delete it all again. Render and validate the manifests in CI without a cluster.
-Done when: on a fresh kind cluster the demo script from section 3 (steps 2 to 9) works at http://localhost:8088; the migrate-seed Job completes before the api pods become ready; deleting one api pod does not interrupt the app; a review decision survives deleting every api pod and the postgres pod; and `docker compose up` still works unchanged.
+**T11 · Kubernetes manifests (added in 1.2, withdrawn in 1.3)**
+Not built. See section 6.3 and ADR 0018.
+
+**T13 · Spike: match two detection runs (added in 1.3, draft, decision gate)**
+Why: a real detection model is retrained, and the same scan gets a second and a third result. The platform must keep the reviewers' decisions across those runs. Today it cannot: the API seeds a scan once and has no path for a second import (`api/app/seed.py`). Before any schema change, this spike answers the riskiest question: can objects from two runs be matched well enough?
+- Run 1 is the current inventory (`data/instances.json`). Run 2 comes from two sources, and every output says which:
+  - **Geometry measured again:** bounding box, centroid and PCA size recomputed per object from the sampled LAS files (`nora-random13.las`, `nora-voxel5mm.las`). These differences come from a real process, not from our design. Read in chunks (rule 8).
+  - **Scripted changes,** with a fixed seed: new ids for every object, class changes, removed and added objects, one pipe split in two, two neighbours merged.
+- A pure matching function in `scripts/` with unit tests on small synthetic fixtures. Geometry first; the P&ID tag only as supporting evidence, because in real model output the tag link would not exist.
+- A report in `docs/spikes/`: per change type, how many objects were matched correctly at several overlap thresholds, and which cases could not be matched.
+- No change to the database, API, UI or tiles.
+- The report states plainly that the accuracy is measured on our own perturbations and on resampled geometry, not on a real model's output.
+Stop and wait for the owner's decision on the threshold, on the data model (an ADR), and on whether to continue.
+
+If the owner continues, the proposed next tasks are (each its own branch, not started):
+- **Schema:** detection runs stored as they arrived, a stable platform object per physical item, and a table linking detections to objects. The current data is imported as run 1, and the app behaves exactly as today.
+- **Second-run import (local full mode only):** match, recompute issues, and list the differences. The invitation demo keeps section 8.7 (a new data version starts clean).
+- **Proposed product rules:** a human decision stays valid until a human reviews the object again; if the model changes the class of a confirmed object, the object goes back to the queue with that reason; if the new run agrees with a human correction, the issue closes automatically as an event whose actor is the system; split and merged objects never inherit a decision automatically; no `confidence` column until a source provides one (the ADR records where it would go and how the queue would sort by it).
+- **3D limit:** tiles carry run 1's ids, so a split pipe cannot be told apart by a 3D click. Split and merge show in the list and the difference report only.
 
 ---
 
@@ -480,7 +479,7 @@ Done when: on a fresh kind cluster the demo script from section 3 (steps 2 to 9)
 - **Testability:** pure functions for issue rules and summary maths; API tests run against a test Postgres (compose service or testcontainers, propose one).
 - **Observability (light):** API logs each review action with scan id, instance id and action.
 - **Accessibility:** keyboard reachable panels and table, visible focus, colour is never the only signal for review status.
-- **Public demo budget:** sampled tiles under 1 GB total, JS bundle under 1 MB gzipped (Three.js included), zero running server cost. Measure and record the real numbers.
+- **Demo budget:** sampled tiles under 1 GB total, JS bundle under 1 MB gzipped (Three.js included), zero running server cost. Measure and record the real numbers.
 
 ---
 
@@ -503,7 +502,8 @@ Open questions for the owner (ask when the related task starts):
 3. Should `SW - SE` objects count in both zones in the dashboard, or stay separate? (T7)
 4. Random or voxel sampling for the demo tiles? (T2)
 5. Cloudflare Pages or GitHub Pages for the demo site, and which domain or subpath? (T9)
-6. The Kubernetes choices in ADR 0018: target cluster, packaging, migration, database, data, entry point. (T11)
+6. ~~The Kubernetes choices in ADR 0018.~~ Withdrawn in 1.3. (T11)
+7. After the T13 report: the overlap threshold, the data model for detection runs (ADR), and whether to continue to the schema task. (T13)
 
 ---
 
@@ -511,7 +511,7 @@ Open questions for the owner (ask when the related task starts):
 
 - The 2-minute demo in section 3 runs from a fresh clone using only the README.
 - All tasks T0 to T9 accepted by the owner.
-- The public demo URL runs the demo script with no setup, and the README links to it.
+- The demo URL runs the demo script for an invited visitor with no other setup, and the README links to it.
 - Tests, type checks and lint pass in one command (`make check` or equivalent).
 - `docs/adr/` has an ADR for every real decision, and `docs/LEARNING.md` has an entry for every task.
 - README states clearly that annotations stand in for AI detections and credits the NORA dataset.
