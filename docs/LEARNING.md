@@ -543,3 +543,32 @@ An outside review argued that the project spends its effort on infrastructure, n
 1. ADR 0015 changed the demo to invitation-only, but the PRD still said "public". Why is that a problem in a project where the PRD is the single source of truth?
 2. Why does T13 match objects by geometry first and use the P&ID tag only as supporting evidence?
 3. Why does T13 recompute geometry from the sampled LAS files, instead of only shifting boxes with a script, and what can its numbers still not prove?
+
+## T13 · Spike: matching objects across two detection runs
+
+### What was built
+
+A measurement, not a feature. No change to the database, API, UI or tiles.
+
+- `scripts/match_runs.py`: a pure function that pairs the objects of two runs by their boxes, and labels each group same, split, merge, uncertain, removed or added ([ADR 0020](adr/0020-matching-detection-runs.md)).
+- `scripts/perturb_run.py`: scripted changes with a fixed seed (new ids, class changes, removals, additions, one split pipe, one merge). It returns the true answer next to the fake run, so the matcher can be scored.
+- `scripts/remeasure_run.py`: measures every object again from a sampled LAS file, in chunks.
+- `scripts/t13_match_spike.py`: runs 20 seeds on three sources at several thresholds. The report is [docs/spikes/T13-match-runs.md](spikes/T13-match-runs.md).
+
+### Key concepts
+
+- **IoU and containment.** IoU is the shared volume divided by the combined volume: 1 for the same box, 0 for boxes that do not touch. Containment divides the shared volume by the smaller box only, so it is high when one box sits inside the other. Half a pipe has IoU 0.5 with the whole pipe, but containment 1. IoU finds "same object", containment finds "part of".
+- **Mutual best.** A pair counts as the same object only if each box is the other's best match. That stops one big box from claiming several small ones.
+- **Ground truth from the script.** The script that changes the run also writes down what it changed. The matcher never sees that list; the score compares the two.
+- **A threshold has to sit below the noise.** Sampling shrinks boxes: on the 13 % sample one object's box keeps only IoU 0.625 with its full-resolution box. Any IoU threshold above that misses unchanged objects, and the table shows it break at 0.7.
+- **An axis-aligned box is a poor shape for a bent pipe.** A 7.9 m pipe run that turns corners gets a box that is mostly empty. Any small object inside that box looks like part of the pipe. That causes almost every error in the spike.
+
+### Why this way
+
+The question "can we match two runs?" decides the data model. If matching fails, the schema has to change, so it is measured first, cheaply, with no schema change. Geometry only, no tags, because a real model's output carries no P&ID tag. Part of run 2 comes from a real process (sampling), so the matcher is not only graded on changes we invented. The report still says these are not a real model's numbers.
+
+### Quiz
+
+1. Half of a pipe is compared with the whole pipe. Roughly what are the IoU and the containment, and which of the two does the matcher use to call it a split?
+2. Why does the IoU threshold have to stay below 0.625 on the 13 % sample, and what goes wrong at 0.7?
+3. A flange next to a bent pipe is removed in run 2, and the matcher reports "flange and pipe merged". Why does that happen, and why does the proposed product rule keep it from carrying a wrong decision forward?
