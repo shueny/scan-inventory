@@ -1,6 +1,6 @@
 # 0016 · Point detail (minNodePixelSize 50) and round points
 
-Status: accepted (owner chose 50 px and circles, 2026-10-11; point size 1.5 added the same day, see Amendment) · 2026-10-11 · Task T10 (added by the owner after T9)
+Status: accepted (owner chose 50 px and circles, 2026-10-11; point size 1.5 added the same day, see Amendment; size 1.25 with EDL on 2026-11-16, see second Amendment) · 2026-10-11 · Task T10 (added by the owner after T9)
 
 ## Context
 
@@ -58,3 +58,13 @@ Options compared at 2× pixel ratio (like a Retina screen), on the 13 % tiles; i
 - minimum size 3 px instead of 2: no visible change up close; it only affects tiny far points.
 
 In the whole-plant view all four looked the same by eye. The shader explains why: a point's size is `max(minSize, size × base)`, where the base comes from the tile's point spacing and the distance. Far away the base is below the 2 px minimum, so `size` has no effect there (only points whose base is between about 1.3 and 2 px grow). Up close the base is well above the minimum, so `size` scales it. For the same reason a minimum of 3 px only changes far points. Larger points mean more pixels to draw. On the full tiles, with up to 3.0M points drawn, the M3 still holds 144 Hz: median 6.9 ms, worst 7.9 ms, no frame over 33 ms (README performance table).
+
+## Amendment: point size 1.25 with EDL (owner, 2026-11-16)
+
+With EDL on ([ADR 0019](0019-point-shading-edl.md)), the gaps between round points no longer show as white specks: EDL darkens them. Size 1.5 then made each point look like a dark-rimmed dot. Compared on the 13 % tiles at a 2× pixel ratio ([spike note](../spikes/T12-edl-tuning.md)):
+
+- size 1.5: grainy up close;
+- **size 1.25 (chosen)**: finer, gaps still covered;
+- size 1.0: the gaps come back as dark specks.
+
+Frame time does not change with the size (close-up median 4.2–4.7 ms at 3.0M points). Paraboloid points looked the same as circles and cost 40–80 % more, so the shape stays a circle. The 5 mm voxel sample gave sharper silhouettes but a regular grid pattern on surfaces, so the demo keeps the random sample ([ADR 0006](0006-demo-sampling.md)).

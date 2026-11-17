@@ -124,6 +124,7 @@ beforeEach(() =>
     selectedId: null,
     colorMode: "class",
     backgroundVisible: true,
+    edlEnabled: true,
     filters: NO_FILTERS,
     sort: { key: "tag", dir: "asc" },
   }),
@@ -223,6 +224,18 @@ describe("FilterPanel", () => {
 
     expect(useViewStore.getState().colorMode).toBe("rgb");
     expect(useViewStore.getState().backgroundVisible).toBe(false);
+  });
+
+  it("turns edge shading (EDL) off and on through the shared store (ADR 0019)", async () => {
+    const user = userEvent.setup();
+    render(<FilterPanel classes={classes} zones={zones} instances={instances} />);
+    const toggle = screen.getByRole("checkbox", { name: "Shade edges (EDL)" });
+
+    expect(toggle).toBeChecked();
+    await user.click(toggle);
+    expect(useViewStore.getState().edlEnabled).toBe(false);
+    await user.click(toggle);
+    expect(useViewStore.getState().edlEnabled).toBe(true);
   });
 
   it("shows zones with counts and filters by zone, tag and class", async () => {

@@ -514,7 +514,62 @@ The draft is on `main` so the choices are in the repo. T11 does not start until 
 2. Which ADR number is the Kubernetes proposal, and which one is the architecture pictures?
 3. What is still out of scope after this draft: Helm, a managed cluster, or the local kind manifests?
 
-Update (PRD 1.3): the owner rejected this draft. See the next entry.
+Update (PRD 1.3): the owner rejected this draft. See "Docs · PRD 1.3" below.
+
+## T12 · Edge shading with Eye-Dome Lighting
+
+### What was built
+
+- **Edge shading:** the viewer now shades the points with Eye-Dome Lighting (EDL). Edges and corners get dark outlines, so pipes and equipment read as surfaces instead of flat dots ([ADR 0019](adr/0019-point-shading-edl.md)).
+- **A toggle:** a "Shade edges (EDL)" checkbox turns the shading off, so the before and after can be shown in the demo.
+- **Code:** the pass lives in `web/src/viewer/edl.ts`.
+
+### Key concepts
+
+- **Why the cloud looked flat.** Every point had one flat colour and no light. A pipe in front of a wall had the same colour at its edge as the wall, so the eye could not see where one surface ends.
+- **What EDL does.** It uses only the depth buffer, the distance from the camera to each pixel:
+  1. For each pixel, look at 8 neighbours on a small circle around it.
+  2. If a neighbour is closer to the camera, the pixel sits behind an edge, so darken it.
+  3. Compare depths on a log scale, so near and far objects get the same outline.
+  4. An empty pixel next to a point gets a strong darkening. That draws the silhouette.
+- **Why no normals are needed.** Ordinary lighting needs to know which way a surface faces. Points do not store that. EDL only needs depth, which every renderer already has.
+- **Render to a texture, then post-process.** The points are drawn into an off-screen target (a colour texture plus a depth texture). Then one full-screen rectangle runs the EDL shader, which reads both textures and writes the shaded picture to the screen.
+- **Two scenes.** The selection box and the filter outlines are drawn after the EDL pass, so they are not outlined themselves. The pass copies the points' depth to the screen, so the box is still hidden behind points in front of it.
+- **Colour spaces.** Three.js stores colours in *linear* values for lighting maths, and the screen expects *sRGB*. The off-screen target kept the background linear, which looked darker on screen. The fix gives empty pixels the background colour in sRGB.
+
+### Why this way
+
+- **An own pass (option A)** instead of the Three.js `EffectComposer` (B) or an SSAO library (C):
+  - It adds no dependency.
+  - It is about 140 lines in one file that can be read top to bottom.
+  - EDL is the standard method for point clouds. SSAO is made for closed meshes and gives noisy shadows on points with gaps.
+- **On by default with a toggle, and Potree's default strength and radius,** as the owner chose.
+- **Still open:** the frame cost on the MacBook Air. The cloud session only has a software renderer (no GPU), which runs the shader on the CPU, so its numbers say nothing about real hardware. The owner runs `pnpm --dir web perf` with the full tiles.
+
+### Quiz
+
+1. EDL needs no normals. What does it use instead, and what makes a pixel darker?
+2. Why are the selection box and the filter outlines drawn in a second scene after the EDL pass, and how does the box stay hidden behind points in front of it?
+3. With the first version, the background turned from #f6f7f9 to a darker grey. Why, and why did the points' own colours not change?
+
+### Follow-up: softer EDL and point size 1.25
+
+- **What changed:** two constants. `EDL_SETTINGS` strength 1.0 → 0.6 and radius 1.4 → 1.0 px; `POINT_STYLE.size` 1.5 → 1.25. Recorded as amendments to [ADR 0019](adr/0019-point-shading-edl.md) and [ADR 0016](adr/0016-point-detail-and-shape.md), with screenshots and frame times in the [spike note](spikes/T12-edl-tuning.md).
+- **Why:**
+  - Up close on the 13 % demo tiles, every point had a thick dark rim, so the cloud looked grainy instead of like surfaces.
+  - The softer values thin the outlines at the same frame time.
+- **What the spike also found:**
+  - **EDL hides gaps.** With EDL off, the floor fills with white specks. A gap pixel next to a point is "behind an edge", so EDL darkens it.
+  - **Smaller is not always finer.** At size 1.0 the gaps return as dark specks. 1.25 is the smallest size that still covers them.
+  - **Paraboloid points cost 40–80 % more** for almost no visible change. Writing depth per pixel turns off the GPU's early depth test.
+  - **Voxel sampling looks sharper but patterned.** The 5 mm cubes leave a regular grid on floors and pipe walls, so the demo keeps the random sample.
+- **How it was measured:** vsync off in a visible Chromium window, so the frame interval is render cost (4.2 ms median at 3.0M points), not the 6.9 ms display refresh.
+
+#### Quiz
+
+1. With EDL off, the 13 % floor shows white specks; with EDL on, it does not. What does EDL do to a gap pixel, and why?
+2. Why did point size 1.0 look worse than 1.25, even though smaller points should look finer?
+3. The README measured 6.9 ms per frame, this spike 4.2 ms on the same M3. Why are both true, and which one shows spare GPU time?
 
 ## Docs · PRD 1.3: the demo as built, Kubernetes withdrawn, a matching spike next
 

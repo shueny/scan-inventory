@@ -10,13 +10,14 @@ import { PointShape, PointSizeType } from "@pnext/three-loader";
  * data the opening view is 26 tiles (about 4.4 MB); zoomed views are 22–29 MB.
  * Circles instead of squares give smoother edges at no measurable cost. Circles leave gaps
  * between neighbours that squares would cover, which showed as white specks on near surfaces,
- * so the points are drawn 1.5 times the loader's base size.
+ * so the points are drawn larger than the loader's base size. With EDL on, 1.25 is enough:
+ * EDL darkens the remaining gaps, and size 1 shows them again as dark specks.
  */
 export const POINT_STYLE = {
   minNodePixelSize: 50,
   shape: PointShape.CIRCLE,
   sizeType: PointSizeType.ADAPTIVE,
-  size: 1.5,
+  size: 1.25,
   minSize: 2,
 } as const;
 
