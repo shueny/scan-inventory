@@ -69,7 +69,24 @@ def seed(session: Session, data_dir: Path) -> bool:
             )
             for c in meta["classes"]
         )
-        session.flush()  # classes must exist before instances reference them
+        session.flush()  # the scan must exist before the run references it
+        # The pipeline's inventory is run 1; each record is kept as it arrived (ADR 0021).
+        run = models.DetectionRun(scan_id=scan_id, run_no=1, source="instances.json")
+        session.add(run)
+        session.flush()  # classes and the run must exist before instances reference them
+        session.add_all(
+            models.Detection(
+                run_id=run.id,
+                detection_id=r["instance_id"],
+                class_id=r["class_id"],
+                point_count=r["point_count"],
+                centroid=_vec(r["centroid"]),
+                bbox_min=_vec(r["bbox_min"]),
+                bbox_max=_vec(r["bbox_max"]),
+                raw=r,
+            )
+            for r in instances
+        )
         session.add_all(
             models.Instance(
                 scan_id=scan_id,
@@ -92,6 +109,18 @@ def seed(session: Session, data_dir: Path) -> bool:
                 location_source=r["location_source"],
                 review_status="unreviewed",
                 current_class_id=r["class_id"],
+                latest_run_id=run.id,
+            )
+            for r in instances
+        )
+        session.flush()  # links reference both the detections and the instances
+        session.add_all(
+            models.DetectionLink(
+                run_id=run.id,
+                detection_id=r["instance_id"],
+                scan_id=scan_id,
+                instance_id=r["instance_id"],
+                kind="initial",
             )
             for r in instances
         )

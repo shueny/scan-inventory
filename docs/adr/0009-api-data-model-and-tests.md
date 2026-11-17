@@ -1,6 +1,6 @@
 # 0009 · API data model, seeding and test database
 
-Status: accepted by the owner · 2026-10-09 · Task T4
+Status: accepted by the owner · 2026-10-09 · Task T4 · Extended by [ADR 0021](0021-detection-runs-schema.md) (detection runs, T14)
 
 ## Context
 

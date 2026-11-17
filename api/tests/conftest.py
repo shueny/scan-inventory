@@ -27,7 +27,7 @@ os.environ.setdefault("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "/var/run/docker.
 
 API_DIR = Path(__file__).resolve().parents[1]
 FIXTURES = Path(__file__).parent / "fixtures"
-TABLES = "review_event, issue, instance, scan_class, scan"
+TABLES = "review_event, detection_link, detection, issue, instance, detection_run, scan_class, scan"
 
 
 @pytest.fixture(scope="session")

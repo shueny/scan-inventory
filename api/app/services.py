@@ -233,9 +233,16 @@ def _event(
         scan_id, instance_id = inst_or_scan.scan_id, inst_or_scan.instance_id
     else:
         scan_id, instance_id = inst_or_scan, None
+    current_run = session.scalar(
+        select(models.DetectionRun.id)
+        .where(models.DetectionRun.scan_id == scan_id)
+        .order_by(models.DetectionRun.run_no.desc())
+        .limit(1)
+    )
     session.add(
         models.ReviewEvent(
             scan_id=scan_id,
+            run_id=current_run,
             instance_id=instance_id,
             issue_id=issue_id,
             action=action,
