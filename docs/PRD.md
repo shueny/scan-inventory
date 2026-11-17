@@ -1,9 +1,10 @@
 # scan-inventory · MVP Product Requirements Document
 
-Version 1.3 (draft) · 2026-11-17 · Owner: Shueny Wang
+Version 1.4 · 2026-11-17 · Owner: Shueny Wang
 Changes in 1.1: online demo added (static hosting, review state in the browser), data source adapter, summary and export moved to the client, new task T9.
 Changes in 1.2 (withdrawn in 1.3): Kubernetes manifests for local full mode on a local cluster (task T11, ADR 0018).
-Changes in 1.3 (draft, waiting for the owner): the demo is described as built in T9, invitation-only behind Cloudflare Access with tiles in a private R2 bucket (sections 1, 3, 4, 6.2; ADR 0015). Kubernetes withdrawn (section 6.3, T11, ADR 0018). New task T13: a spike on matching two detection runs, so review decisions can survive a new model version (section 9).
+Changes in 1.3 (accepted 2026-11-17): the demo is described as built in T9, invitation-only behind Cloudflare Access with tiles in a private R2 bucket (sections 1, 3, 4, 6.2; ADR 0015). Kubernetes withdrawn (section 6.3, T11, ADR 0018). New task T13: a spike on matching two detection runs, so review decisions can survive a new model version (section 9).
+Changes in 1.4: T13 done, the owner continues (thresholds IoU 0.5 and containment 0.8, ADR 0020). The schema step becomes task T14 (section 9).
 
 This document is the single source of truth for building the scan-inventory MVP with Claude Code. Read it fully before writing code. When this document and your own judgement disagree, stop and ask the owner.
 
@@ -334,6 +335,7 @@ Data model (propose the exact SQLAlchemy models in T5, these are the minimum):
 - `instance` (scan_id, instance_id, class_id, class_name, is_background, point_count, centroid, bbox_min, bbox_max, tag, all_tags, element, nominal_inch, system, zone, location_source, length_est_m, diameter_est_m, review_status, current_class_id). Primary key (scan_id, instance_id).
 - `issue` (scan_id, issue_id, type, severity, instance_ids, tags, title, detail, suggested_action, suggested_class_id, candidate_tags, status: open | resolved | dismissed)
 - `review_event` (id, scan_id, instance_id, issue_id nullable, action, from_value, to_value, note, created_at). Append-only. This is the audit history.
+- Added in T14 ([ADR 0021](adr/0021-detection-runs-schema.md)): `detection_run` (one model result per scan, `run_no`), `detection` (each object of a run as it arrived), `detection_link` (detection → instance, with the match kind). `instance.latest_run_id` and `review_event.run_id` record which run the geometry and each decision belong to.
 
 `review_status` per instance: `unreviewed` | `confirmed` | `corrected` | `rejected`.
 
@@ -452,7 +454,7 @@ Done when: the demo URL runs the demo script from section 3 in Chrome and Firefo
 **T11 · Kubernetes manifests (added in 1.2, withdrawn in 1.3)**
 Not built. See section 6.3 and ADR 0018.
 
-**T13 · Spike: match two detection runs (added in 1.3, draft, decision gate)**
+**T13 · Spike: match two detection runs (added in 1.3, done)**
 Why: a real detection model is retrained, and the same scan gets a second and a third result. The platform must keep the reviewers' decisions across those runs. Today it cannot: the API seeds a scan once and has no path for a second import (`api/app/seed.py`). Before any schema change, this spike answers the riskiest question: can objects from two runs be matched well enough?
 - Run 1 is the current inventory (`data/instances.json`). Run 2 comes from two sources, and every output says which:
   - **Geometry measured again:** bounding box, centroid and PCA size recomputed per object from the sampled LAS files (`nora-random13.las`, `nora-voxel5mm.las`). These differences come from a real process, not from our design. Read in chunks (rule 8).
@@ -462,9 +464,16 @@ Why: a real detection model is retrained, and the same scan gets a second and a 
 - No change to the database, API, UI or tiles.
 - The report states plainly that the accuracy is measured on our own perturbations and on resampled geometry, not on a real model's output.
 Stop and wait for the owner's decision on the threshold, on the data model (an ADR), and on whether to continue.
+Outcome: report in `docs/spikes/T13-match-runs.md`. The owner continues with IoU 0.5 and containment 0.8 (ADR 0020).
 
-If the owner continues, the proposed next tasks are (each its own branch, not started):
-- **Schema:** detection runs stored as they arrived, a stable platform object per physical item, and a table linking detections to objects. The current data is imported as run 1, and the app behaves exactly as today.
+**T14 · Schema: detection runs (added in 1.4)**
+Detection runs stored as they arrived, a stable platform object per physical item, and a table linking detections to objects. The current data is imported as run 1, and the app behaves exactly as today: same API responses, same UI, same tiles. No second-run import yet.
+- The `instance` table stays the stable object and keeps the review state; its geometry is a copy of the latest run. New tables: `detection_run`, `detection`, `detection_link`.
+- Object id = run 1's `instance_id`, so tiles and picking are unchanged. Objects first seen in a later run get ids above the current maximum.
+- A review event stays on the object and also records the run that was current when it was made.
+- An Alembic migration fills run 1 from the existing rows, so review history in an existing database is kept.
+
+The remaining proposed tasks (each its own branch, not started):
 - **Second-run import (local full mode only):** match, recompute issues, and list the differences. The invitation demo keeps section 8.7 (a new data version starts clean).
 - **Proposed product rules:** a human decision stays valid until a human reviews the object again; if the model changes the class of a confirmed object, the object goes back to the queue with that reason; if the new run agrees with a human correction, the issue closes automatically as an event whose actor is the system; split and merged objects never inherit a decision automatically; no `confidence` column until a source provides one (the ADR records where it would go and how the queue would sort by it).
 - **3D limit:** tiles carry run 1's ids, so a split pipe cannot be told apart by a 3D click. Split and merge show in the list and the difference report only.

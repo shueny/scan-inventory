@@ -627,3 +627,35 @@ The question "can we match two runs?" decides the data model. If matching fails,
 1. Half of a pipe is compared with the whole pipe. Roughly what are the IoU and the containment, and which of the two does the matcher use to call it a split?
 2. Why does the IoU threshold have to stay below 0.625 on the 13 % sample, and what goes wrong at 0.7?
 3. A flange next to a bent pipe is removed in run 2, and the matcher reports "flange and pipe merged". Why does that happen, and why does the proposed product rule keep it from carrying a wrong decision forward?
+
+## T14 · Schema: detection runs
+
+### What was built
+
+Storage for more than one model result per scan. Nothing visible changes: same API responses, same UI, same tiles ([ADR 0021](adr/0021-detection-runs-schema.md)).
+
+- Three new tables:
+  - `detection_run`: one row per model result, numbered per scan.
+  - `detection`: each object of a run, kept as it arrived.
+  - `detection_link`: which platform object a detection belongs to, and how the match was made.
+- `instance` stays the object the reviewers decide on. `latest_run_id` says which run its geometry came from.
+- Each `review_event` records the run that was current when the decision was made.
+- Alembic migration `0002` turns an existing database into run 1 and keeps its review history. `seed.py` writes run 1 for a new database.
+
+### Key concepts
+
+- **Detection and object are different things.** A detection is what the model said in one run. An object is the physical item the platform tracks over time. Before T14 one row was both. Now a pipe can have one detection per run, all linked to the same object, and the reviewer's decision stays on the object.
+- **Keep the input as it arrived.** `detection.raw` stores the whole record from the file. Later code can always check what a run really said, even after the object was corrected.
+- **Data migration, not only schema migration.** `0002` creates tables and also fills them from the old rows: one run per scan, one detection and link per instance, run 1 on every old event. Columns that must not be empty start nullable, get filled, and only then become `NOT NULL`.
+- **Same id, nothing else to change.** The object id is run 1's `instance_id`, which is also the id inside the tiles. So 3D picking, the API and the UI did not need to change.
+- **Flush order without relationships.** The models have foreign keys but no SQLAlchemy `relationship()`. So SQLAlchemy does not know which row to write first, and `seed.py` flushes after the scan, after the run and after the instances.
+
+### Why this way
+
+The owner chose the option that keeps the app exactly as it was (a), the existing ids (a), events on the object with their run (a), and a migration that keeps review history (a). The full split into `object` and `detection` (b) would be cleaner, but it changes every query in a task whose promise is "nothing changes". The copy-per-run design (c) would copy decisions instead of keeping them.
+
+### Quiz
+
+1. A pipe was confirmed in run 1. Run 2 arrives with a new id for it. Which rows describe the pipe after run 2 is imported, and where does the "confirmed" decision live?
+2. Why does migration `0002` add `review_event.run_id` as nullable first, and only make it `NOT NULL` at the end?
+3. Why did keeping run 1's `instance_id` as the object id mean that the tiles and the 3D click did not need to change?
